@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.03
+#version 1.04
 
 import PySimpleGUI as sg
 import os.path
@@ -93,6 +93,13 @@ default_ships_names = [
     'Титан'                         #   id  #   8
 ]
 
+default_rockets_names = [
+    'Sticks-XL',                    #   id  #   0
+    'Кобра-М1',                     #   id  #   1
+    'Аврора',                       #   id  #   2
+    'X-Ray',                        #   id  #   3
+]
+
 default_planetary_coefs = [
     ['T0', 0, 0, 0.00, 0.00, 0.00],
     ['T1', 0, 0, 0.80, 1.00, 1.20],
@@ -134,18 +141,19 @@ default_buildings_defense_list = [
     ['Генератор щита', 750]
 ]
 
-# Название, кол-во боеголовок, урон от боеголовки, цена, время постройки, id цели
-default_missiles_list = [
-    ['Sticks-XL', 1, 50, 100, 22, 3, 1],
-    ['Кобра-М1', 1, 150, 250, 45, 3, 0],
-    ['Аврора', 4, 75, 600, 90, 3, 2],
-    ['X-Ray', 1, 100, 3000, 150, 3, 3]
-]
-# Цели атаки ракет:                             id
-# Кобра-М1      при атаке и захвате планеты     0
-# Sticks-XL     при блокаде планеты             1
-# X-Ray         против Валькирий                3
-# Аврора        всегда                          2
+# Название, кол-во боеголовок, урон от боеголовки, цена, время постройки
+default_rockets_list = (
+    ('Sticks-XL', 1, 50, 100, 45),
+    ('Кобра-М1', 1, 150, 250, 90),
+    ('Аврора', 4, 75, 600, 180),
+    ('X-Ray', 1, 100, 3000, 300)
+)
+
+# Цели атаки ракет:
+# Sticks-XL     при блокаде планеты
+# Кобра-М1      при атаке и захвате планеты
+# Аврора        всегда
+# X-Ray         против Валькирий
 
 # Пассивный урон у ракетных турелей - рельсовый, у ракет - ракетный, от взрыва генератора щита - лазерный
 
@@ -286,9 +294,141 @@ def _save_ships_to_file(ships):
         for line in lines:
             f.write(line)
     f.close()
-    text = "ships data saved to file:\n%s" % (ships)
+    text = "ships data saved to file:\n%s" % (str(ships))
     _log(text)
     print(text)
+
+def _load_rockets_from_file():
+    rockets = []
+    rockets_str = []
+    rockets_str_2 = []
+    rockets_names = default_rockets_names
+    #['Sticks-XL', 'Кобра-М1', 'Аврора', 'X-Ray']
+    filename = "rockets.txt"
+    if os.path.isfile(filename):
+        with open(filename, "r") as f:
+            lines = f.readlines()
+        f.close()
+        text = "_load_rockets_from_file: file read"
+        _log(text)
+        print(text)
+        
+        try:
+            if len(lines) != 4:
+                raise ValueError
+        except ValueError:
+            title = 'Ошибка загрузки файла ракет'
+            text = 'Возникла ошибка при загрузке параметров ракет из файла.\nВозможно файл был изменён некорректным образом.\nБудут использованы значения по умолчанию.'
+            _error_popup_value_error(title, text)
+            _save_rockets_to_file(default_rockets_list)
+            return default_rockets_list
+        
+        i = 0
+        for line in lines:
+            rockets_str.append(rockets_names[i] + ' ' + line.strip())
+            i += 1
+        
+        i = 0
+        for line in rockets_str:
+            rockets_str_2.append([])
+            value = ''
+            for j in range(len(line)):
+                if line[j] != ' ':
+                    value += line[j]
+                else:
+                    rockets_str_2[i].append(value)
+                    value = ''
+                    j += 1
+            i += 1
+        
+        for j in range(len(rockets_str_2)):
+            rockets.append([rockets_str_2[j][0]])
+            for i in range(1, len(rockets_str_2[j])):
+                try:
+                    rockets[j].append(int(rockets_str_2[j][i]))
+                except:
+                    title = 'Ошибка загрузки файла ракет'
+                    text = 'Возникла ошибка при загрузке параметров ракет из файла.\nВозможно файл был изменён некорректным образом.\nБудут использованы значения по умолчанию.'
+                    _error_popup_value_error(title, text)
+                    _save_rockets_to_file(default_rockets_list)
+                    return default_rockets_list
+        
+        try:
+            if len(rockets) != 4:
+                raise ValueError
+            for j in range(len(rockets)):
+                if len(rockets[j]) != 5:
+                    raise ValueError
+        except ValueError:
+            title = 'Ошибка загрузки файла ракет'
+            text = 'Возникла ошибка при загрузке параметров ракет из файла.\nВозможно файл был изменён некорректным образом.\nБудут использованы значения по умолчанию.'
+            _error_popup_value_error(title, text)
+            _save_rockets_to_file(default_rockets_list)
+            return default_rockets_list
+        
+        for j in range(len(rockets)):
+            for i in range(1, 5):
+                try:
+                    if rockets[j][i] == 0:
+                        raise ValueError
+                except ValueError:
+                    title = 'Ошибка загрузки файла ракет'
+                    text = 'Возникла ошибка при загрузке параметров ракет из файла.\nБыл обнаружен ноль в параметрах.\nБудут использованы значения по умолчанию.'
+                    _error_popup_value_error(title, text)
+                    _save_rockets_to_file(default_rockets_list)
+                    return default_rockets_list
+        
+    else:
+        try:
+            text = "_load_rockets_from_file: file not found"
+            _log(text)
+            print(text)
+            raise ValueError
+        except ValueError:
+            title = 'Ошибка загрузки файла ракет'
+            text = 'Файл rockets.txt не найден.\nБудут использованы значения по умолчанию.\nНовый файл будет создан с этими значениями.'
+            _error_popup_value_error(title, text)
+            _save_rockets_to_file(default_rockets_list)
+            return default_rockets_list
+        
+    #text = "Loaded rockets from file:\n%s" % (rockets)
+    #_log(text)
+    #print(text)
+    return rockets
+
+def _save_rockets_to_file(rockets):
+    lines = []
+    filename = "rockets.txt"
+    with open(filename, "w") as f:
+        for j in range(4):
+            line = ''
+            for i in range(1, 5):
+                line += str(rockets[j][i]) + ' '
+            line += '0\n'
+            lines.append(line)
+        for line in lines:
+            f.write(line)
+    f.close()
+    text = "rockets data saved to file:\n%s" % (str(rockets))
+    _log(text)
+    print(text)
+
+def _check_rockets_before_saving(rockets):
+    try:
+        if len(rockets) != 4:
+            raise ValueError
+        for j in range(len(rockets)):
+            if len(rockets[j]) != 5:
+                raise ValueError
+            for i in range(1, 5):
+                if rockets[j][i] == 0:
+                    raise ValueError
+    except ValueError:
+        title = 'Ошибка сохранения параметров'
+        text = 'Возникла ошибка при сохранении параметров ракет.\nВозможно был обнаружен ноль в параметрах.\nИсправьте значения.'
+        _error_popup_value_error(title, text)
+        return False
+    return True
 
 def _check_ships_before_saving(ships):
     try:
@@ -425,6 +565,11 @@ def _load_default_options_ships(window):
         for i in range(3, 16):
             window['ship_' + str(j) + str(i)].update(value = default_ship_list[j][i])
 
+def _load_default_options_rockets(window):
+    for j in range(4):
+        for i in range(1, 5):
+            window['rocket_' + str(j) + str(i)].update(value = default_rockets_list[j][i])
+
 def _load_default_options_globals(window):
     window['globals_0'].update(value = global_defaults[0])
     window['globals_1'].update(value = global_defaults[1])
@@ -531,7 +676,7 @@ def _error_popup_value_error(title, text):
 
 def _my_popup_about():
     title = 'О программе'
-    text = 'version 1.03\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
+    text = 'version 1.04\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
     text += 'Minter Mxe548ae76175bec07bca65010da7c7999db585cd2\n' + 'Long Coin 16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n' + 'Near validol.near'
     text += '\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714'
     layout = [[sg.Multiline(default_text = text, disabled = True, size = (45, 22))], [sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -544,7 +689,7 @@ def _my_popup_about():
 
 def _my_popup_description():
     title = 'Описание возможностей'
-    text = 'Программа производит расчёты по будущей механике, которая сейчас тестируется на ЗБТ.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.'
+    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.'
     layout = [[sg.Text(text)]]#, [sg.Button('Продолжить')]]
     window = sg.Window(title, layout, modal = True, size = (600, 450), icon = galaxy_icon)#auto_size_text = True)
     while True:
@@ -555,7 +700,7 @@ def _my_popup_description():
 
 def _my_popup_description_first():
     title = 'Описание возможностей'
-    text = 'Программа производит расчёты по будущей механике, которая сейчас тестируется на ЗБТ.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.\n\n Это описание можно найти в верхнем меню Help - Description.'
+    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.\n\n Это описание можно найти в верхнем меню Help - Description.'
     layout = [[sg.Text(text)], [sg.Button('Продолжить')]]
     window = sg.Window(title, layout, modal = True, size = (600, 500), icon = galaxy_icon)#auto_size_text = True)
     while True:
@@ -593,6 +738,7 @@ def _global_settings_popup():
             _load_default_options_globals(window)
     window.close()
 
+# Окно с параметрами кораблей
 def _options_popup():
     options_header_1 = ['Название', 'Идентификатор', 'Тип урона', 'Атака', 'Защита', 'Вес', 'Приоритет в атаке', 'Приоритет в защите', 'Скорость', 'Цена', 'Защита от лазера', 'Защита от кинетики', 'Защита от плазмы', 'Защита от ракет', 'Защита от рельсы', 'Время строительства']
     options_ship_names = default_ships_names
@@ -641,13 +787,51 @@ def _options_popup():
             _load_default_options_ships(window)
     window.close()
 
+# Окно с параметрами ракет
+def _options_rockets_popup():
+    options_header_1 = ['Название', 'Количество боеголовок', 'Урон одной боеголовки', 'Цена', 'Время строительства']
+    options_rocket_names = default_rockets_names
+    rockets = listofrockets
+    #['Sticks-XL', 'Кобра-М1', 'Аврора', 'X-Ray']
+    rocket_rows = [[[sg.Text(options_rocket_names[j])]] + [[sg.Input(default_text = options_header_1[i], size = (20, 1), readonly = True, enable_events = False), sg.Input(default_text = str(rockets[j][i]), size = (10, 1), key = 'rocket_' + str(j) + str(i), justification = 'right')]  for i in range(1, 5)] for j in range(4)]
+    
+    to_check_ids_options = ['rocket_' + str(j) + str(i) for j in range(4) for i in range(1, 5)]
+    text = "to_check_ids_options list:\n%s" % (to_check_ids_options)
+    _log(text)
+    print(text)
+    
+    rocket_columns = []
+    for row in rocket_rows:
+        rocket_columns.append(sg.Column(row))
+    rocket_main_column = sg.Column([rocket_columns], scrollable = True, expand_y = True)
+    layout = [[rocket_main_column]] + [[sg.Button('Сохранить и закрыть'), sg.Button('Закрыть без сохранения'), sg.Button('Сбросить на дефолтные')]]
+    window = sg.Window('Параметры ракет', layout, size = (1100, 250), modal = True, resizable = True, icon = galaxy_icon)
+    while True:
+        event, values = window.read()
+        if event == "Сохранить и закрыть":
+            if _check_is_a_positive_number(values, to_check_ids_options):
+                for j in range(4):
+                    for i in range(1, 5):
+                        rockets[j][i] = int(values['rocket_' + str(j) + str(i)])
+                if _check_rockets_before_saving(rockets):
+                    _save_rockets_to_file(rockets)
+                    for j in range(4):
+                        for i in range(5):
+                            listofrockets[j][i] = rockets[j][i]
+                    break
+        elif event in ('Закрыть без сохранения', sg.WIN_CLOSED):
+            break
+        elif event == 'Сбросить на дефолтные':
+            _load_default_options_rockets(window)
+    window.close()
+
 def _tab1_layout():
     headings_1 = ['Корабль', 'Количество']
     headings_2 = ['Корабль', 'Выжило', 'Потеряно', 'Прочее']
     headings_ship_names = ['Джавелин', 'Хорнет', 'Раптор', 'Экскалибр', 'Аббадон', 'Локи', 'Геркулес', 'Валькирия', 'Титан']
     headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
     headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
-    headings_type_turrets = ['Сумма уровней турелей'] + [default_missiles_list[i][0] for i in range(0, 4)]
+    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(0, 4)]
     
     t1c1_header =  [[sg.Text(' '*14)] + [sg.Text('Флот 1')]]
     t1c2_header =  [[sg.Text(' '*14)] + [sg.Text('Флот 2')]]
@@ -700,9 +884,9 @@ def _tab1_layout():
     # key Турели и ракеты
     sub_column_15 = [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (21, 1)), sg.Combo(default_planet_names , readonly = True, key = 't1_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (21, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't1_planet_mines', default_value = '3 шахты')]]
     sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't1c8_' + str(i))] for i in range(5)]
-    sub_column_15 += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't1_do_passive', default_value = 'Нет')]]
+    #sub_column_15 += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't1_do_passive', default_value = 'Нет')]]
     sub_column_15 += [[sg.Input(default_text = 'Ракеты по блокаде?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't1_blockade', default_value = 'Нет')]]
-    sub_column_15 += [[sg.Input(default_text = 'ЗБТ: приоритет блокады против ракет:', size = (21, 1), readonly = True), sg.Combo(['Атака', 'Защита'], readonly = True, key = 't1_blockade_priority', default_value = 'Защита')]]
+    sub_column_15 += [[sg.Input(default_text = 'приор. блок. против ракет:', size = (21, 1), readonly = True), sg.Combo(['Атака', 'Защита'], readonly = True, key = 't1_blockade_priority', default_value = 'Атака')]]
     
     my_yseparator = [[sg.Text('|')] for i in range(29)]
     my_hseparator_1 = [[sg.Text('_'*150)]]
@@ -737,7 +921,7 @@ def _tab2_layout():
     headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
     headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
     headings_fleet_1 = ['Корабль', 'Количество', 'Стоимость', 'Время строит. всего флота', 'Выжило', 'Потеряно', 'Стоимость', 'С. с вылетом', 'Время строит. потерянного флота', 'Урона остал.'] # length 9
-    headings_type_turrets = ['Сумма уровней турелей'] + [default_missiles_list[i][0] for i in range(1, 3)]
+    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(1, 3)]
     
     t2c1_header = [[sg.Text(' '*0)] + [sg.Text('Модификаторы атаки, защиты (модуль),\nтипа урона и защиты от типа урона\n(Командоры).\nУказывать в процентах, например, 25')]]
     t2c2_header_1 =  [[sg.Text(' '*8)] + [sg.Text('Цель: Флот 2')]]
@@ -769,7 +953,7 @@ def _tab2_layout():
     # key Турели и ракеты
     sub_column_15 = [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (21, 1)), sg.Combo(default_planet_names , readonly = True, key = 't2_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (21, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't2_planet_mines', default_value = '3 шахты')]]
     sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't2c6_' + str(i))] for i in range(3)]
-    sub_column_15 += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't2_do_passive', default_value = 'Нет')]]
+    #sub_column_15 += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't2_do_passive', default_value = 'Нет')]]
     #sub_column_15 += [[sg.Input(default_text = 'Ракеты по блокаде?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't2_blockade', default_value = 'Нет')]]
     
     # keys потеряно кораблей Флот 2 и их стоимость
@@ -893,11 +1077,11 @@ def _tab4_layout():
     sub_column_part_2 = [[sg.Input(default_text = 'Здание', readonly = True, size = (19, 1)), sg.Input(default_text = 'Суммарный уровень', readonly = True, size = (18, 1))]]
     sub_column_part_3 = [[sg.Input(default_text = default_buildings_defense_list[i][0], readonly = True, size = (19, 1)), sg.Input(default_text = '0', key = 't4_buildings_' + str(i), size = (18, 1), justification = 'right')] for i in range(len(default_buildings_defense_list))]
     
-    sub_column_part_4 = header_2 + [[sg.Input(default_text = default_missiles_list[i][0], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4_rockets_' + str(i), size = (10, 1), justification = 'right')] for i in range(1, 4)]
+    sub_column_part_4 = header_2 + [[sg.Input(default_text = listofrockets[i][0], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4_rockets_' + str(i), size = (10, 1), justification = 'right')] for i in range(1, 4)]
     
     sub_column_part_4_b = header_2_b + [[sg.Input(default_text = headings_4[i], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4_buffs_' + str(i), size = (10, 1), justification = 'right')] for i in range(2)]
     
-    sub_column_part_4_b += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (18, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't4_do_passive', default_value = 'Нет')]]
+    #sub_column_part_4_b += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (18, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't4_do_passive', default_value = 'Нет')]]
     
     sub_column_part_5_1 = header_3_1 + [[sg.Input(default_text = headings_1[i], readonly = True, size = (19, 1)), sg.Input(default_text = '0', readonly = True, size = (19, 1), key = 't4_out_1_' + str(i), justification = 'right')] for i in range(0, len(headings_1))]
     
@@ -930,6 +1114,7 @@ def _tab4_layout():
     
 def _main():
     global listofships
+    global listofrockets
     global thold_per
     global thold_max
     global thold_max_bonus
@@ -969,9 +1154,35 @@ def _main():
     text = "to_check_ids_tab_4 list:\n%s" % (to_check_ids_tab_4)
     _log(text)
     print(text)
-    menu_def = [['&File', 'E&xit'], ['Se&ttings', ['Parameters', 'Globals']], ['&Help', ['Description', 'About...']]]
+    menu_def = [['&File', 'E&xit'], ['Se&ttings', ['Ships', 'Rockets', 'Globals']], ['&Help', ['Description', 'About...']]]
     menu = [[sg.Menu(menu_def, key='_MENU_')]]
-
+    
+    if not os.path.isfile("globals.txt"):
+        _my_popup_description_first()
+        _save_globals_to_file(global_defaults)
+        if not os.path.isfile("ships.txt"):
+            _save_ships_to_file(default_ship_list)
+        if not os.path.isfile("rockets.txt"):
+            _save_rockets_to_file(default_rockets_list)
+    
+    listofships = _load_ships_from_file()
+    listofrockets_tuple = _load_rockets_from_file()
+    listofrockets = []
+    for i in range(4):
+        listofrockets.append([])
+        for j in range(5):
+            listofrockets[i].append(listofrockets_tuple[i][j])
+    loaded_globals = _load_globals_from_file()
+    thold_per = float(loaded_globals[0])
+    thold_max_bonus = int(loaded_globals[1])
+    thold_max = _my_round_threshhold_up(1 + thold_max_bonus / 100, 7, 0.5)
+    text = "\nInitialization.\nLoaded ships:\n%s" % (listofships)
+    _log(text)
+    print(text)
+    text = "\nInitialization.\nLoaded rockets:\n%s" % (listofrockets)
+    _log(text)
+    print(text)
+    
     tab1_layout = _tab1_layout()
     tab2_layout = _tab2_layout()
     tab3_layout = _tab3_layout()
@@ -985,27 +1196,18 @@ def _main():
 
     window = sg.Window("Galaxy Online Калькулятор боёв", layout, size = (1250, 780), resizable = True, keep_on_top = False, element_justification = 'center', grab_anywhere = False, location=(10, 10), icon = galaxy_icon)
     
-    if not os.path.isfile("globals.txt"):
-        _my_popup_description_first()
-        _save_globals_to_file(global_defaults)
-        if not os.path.isfile("ships.txt"):
-            _save_ships_to_file(default_ship_list)
-    
-    listofships = _load_ships_from_file()
-    loaded_globals = _load_globals_from_file()
-    thold_per = float(loaded_globals[0])
-    thold_max_bonus = int(loaded_globals[1])
-    thold_max = _my_round_threshhold_up(1 + thold_max_bonus / 100, 7, 0.5)
-    text = "\nInitialization.\nLoaded ships:\n%s" % (listofships)
-    _log(text)
-    print(text)
+    #test
+    #left, dead = _simulate_damage_with_rockets_universal([1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], [[0, 3000],[1, 2000],[2, 1000],[3, 500]], [1.0, 1.0], [1, 1, 1, 1, 1], True, False, 0.5)
+    #print("Test left 4 dead: %s and %s" % (left, dead))
     
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED:
             break
-        elif event == "Parameters":
+        elif event == "Ships":
             _options_popup()
+        elif event == "Rockets":
+            _options_rockets_popup()
         elif event == "Globals":
             _global_settings_popup()
         elif event == "Description":
@@ -1028,7 +1230,7 @@ def _main():
                         sum_of_ships_1 += team1[i]
                     for i in range(len(team2)):
                         sum_of_ships_2 += team2[i]
-                    if sum_of_ships_1 == 0:# or sum_of_ships_2 == 0:
+                    if sum_of_ships_1 == 0:
                         flag_empty_team = True
                     if not flag_empty_team:
                         if values['t1c1_att'] == 'В атаке':
@@ -1060,10 +1262,6 @@ def _main():
                             on_blockade = True
                         else:
                             on_blockade = False
-                        if values['t1_do_passive'] == "Да":
-                            do_passive_overwrite = True
-                        else:
-                            do_passive_overwrite = False
                         if values['t1_blockade_priority'] == "Атака":
                             on_blockade_attack = True
                         else:
@@ -1073,152 +1271,36 @@ def _main():
                         planetary_coef = default_planetary_coefs[j][k]
                         turret_damage = 100 * planetary_coef
                         turret_level = int(values['t1c8_0'])
-                        all_rockets_raw = []
+                        all_rockets = []
                         for i in range(4):
-                            all_rockets_raw.append(int(values['t1c8_' + str(i + 1)]))
-                        text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets_raw)
+                            all_rockets.append([i, int(values['t1c8_' + str(i + 1)])])
+                        text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
                         _log(text)
                         print(text)
-                        all_rockets = []
-                        for i in range(len(all_rockets_raw)):
-                            all_rockets.append(default_missiles_list[i][1] * all_rockets_raw[i])
-                        do_passive = True
-                        if all_rockets[0] != 0 or all_rockets[1] != 0 or all_rockets[2] != 0 or all_rockets[3] != 0:
-                            do_passive = False
-                        # Why? Because at the last moment in Closed Beta it was changed to do passive damage if there are rocket missiles present on the planet
-                        if do_passive_overwrite:
-                            do_passive = True
-                        else:
-                            do_passive = False
-                        if not on_blockade:
-                            if do_passive:
-                                # Turret passive damage
-                                turret_sum_damage = turret_damage * turret_level
-                                turret_results = _simulate_turret_damage(team1, module1, turret_sum_damage, defense_type_mod_1, threshhold)
-                                # [team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team2_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1)]
-                                team1 = []
-                                for ship in turret_results[2]:
-                                    team1.append(ship)
-                                for i in range(len(turret_results[0])):
-                                    overall_team1_ships_lost[i] += turret_results[0][i]
-                                text = "\nTeam1 ships destroyed by passive damage:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (turret_results[0], team1, overall_team1_ships_lost)
-                                _log(text)
-                                print(text)
-                                sum_of_ships_1 = 0
-                                for i in range(len(team1)):
-                                    sum_of_ships_1 += team1[i]
-                                if sum_of_ships_1 == 0:
-                                    flag_empty_team = True
-                                else:
-                                    flag_empty_team = False
-                                #
-                            # Valkyr
-                            if team1[7] != 0 and all_rockets[3] != 0:
-                                valkyr_dead_from_xray = int(_my_round_threshhold_up(all_rockets[3] * 100 / (listofships[7][13] * module1[1] * defense_type_mod_1[3]), 0, threshhold))
-                                # all_rockets[3]
-                                # int(_my_round_threshhold_up(all_rockets[3] * 100 / (listofships[7][13] * module1[1] * defense_type_mod_1[3]), 0, threshhold))
-                                if team1[7] <= valkyr_dead_from_xray:
-                                    valkyr_dead_from_xray = team1[7]
-                                team1[7] -= valkyr_dead_from_xray
-                                text = "%s Valkyrs were destroyed by %s X-Ray missiles." % (valkyr_dead_from_xray, all_rockets[3])
-                                _log(text)
-                                print(text)
-                                overall_team1_ships_lost[7] += valkyr_dead_from_xray
-                                text = "\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (team1, overall_team1_ships_lost)
-                                _log(text)
-                                print(text)
-                                sum_of_ships_1 = 0
-                                for i in range(len(team1)):
-                                    sum_of_ships_1 += team1[i]
-                                if sum_of_ships_1 == 0:
-                                    flag_empty_team = True
-                                else:
-                                    flag_empty_team = False
+                        if not flag_empty_team:
+                            # Rocket damage
+                            # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
+                            # return [ships_left, ships_dead]
+                            turret_sum_damage = turret_damage * turret_level
+                            do_theory = False
+                            rocket_results = _simulate_damage_with_rockets_universal(team1, all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                            team1 = []
+                            for ship in rocket_results[0]:
+                                team1.append(ship)
+                            for i in range(len(rocket_results[1])):
+                                overall_team1_ships_lost[i] += rocket_results[1][i]
+                            text = "\nTeam1 ships destroyed by rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (rocket_results[1], team1, overall_team1_ships_lost)
+                            _log(text)
+                            print(text)
+                            sum_of_ships_1 = 0
+                            for i in range(len(team1)):
+                                sum_of_ships_1 += team1[i]
+                            if sum_of_ships_1 == 0:
+                                flag_empty_team = True
+                            else:
+                                flag_empty_team = False
                             #
-                            # Cobra
-                            if not flag_empty_team:
-                                if all_rockets[1] != 0:
-                                    rocket_results = _simulate_rocket_damage(team1, all_rockets[1], 1, module1, True, defense_type_mod_1, threshhold)
-                                    team1 = []
-                                    for ship in rocket_results[2]:
-                                        team1.append(ship)
-                                    for i in range(len(rocket_results[0])):
-                                        overall_team1_ships_lost[i] += rocket_results[0][i]
-                                    text = "\nTeam1 ships destroyed by %s %s rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (all_rockets[1], default_missiles_list[1][0], rocket_results[0], team1, overall_team1_ships_lost)
-                                    _log(text)
-                                    print(text)
-                                    sum_of_ships_1 = 0
-                                    for i in range(len(team1)):
-                                        sum_of_ships_1 += team1[i]
-                                    if sum_of_ships_1 == 0:
-                                        flag_empty_team = True
-                                    else:
-                                        flag_empty_team = False
-                            #
-                            # Avrora
-                            if not flag_empty_team:
-                                if all_rockets[2] != 0:
-                                    rocket_results = _simulate_rocket_damage(team1, all_rockets[2], 2, module1, True, defense_type_mod_1, threshhold)
-                                    team1 = []
-                                    for ship in rocket_results[2]:
-                                        team1.append(ship)
-                                    for i in range(len(rocket_results[0])):
-                                        overall_team1_ships_lost[i] += rocket_results[0][i]
-                                    text = "\nTeam1 ships destroyed by %s %s rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (all_rockets[2], default_missiles_list[2][0], rocket_results[0], team1, overall_team1_ships_lost)
-                                    _log(text)
-                                    print(text)
-                                    sum_of_ships_1 = 0
-                                    for i in range(len(team1)):
-                                        sum_of_ships_1 += team1[i]
-                                    if sum_of_ships_1 == 0:
-                                        flag_empty_team = True
-                                    else:
-                                        flag_empty_team = False
-                            # _simulate_rocket_damage(team1, all_rockets, r_id, module1, att_def_1, defense_type_mod_1, threshhold)
-                            # [team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, all_rockets, _calc_build_time(team1_ships_dead), _calc_build_time(team1)]
-                            #
-                        else:
-                            # Sticks XL
-                            if all_rockets[0] != 0:
-                                rocket_results = _simulate_rocket_damage(team1, all_rockets[0], 0, module1, on_blockade_attack, defense_type_mod_1, threshhold)
-                                team1 = []
-                                for ship in rocket_results[2]:
-                                    team1.append(ship)
-                                for i in range(len(rocket_results[0])):
-                                    overall_team1_ships_lost[i] += rocket_results[0][i]
-                                text = "\nTeam1 ships destroyed by %s %s rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (all_rockets[0], default_missiles_list[0][0], rocket_results[0], team1, overall_team1_ships_lost)
-                                _log(text)
-                                print(text)
-                                sum_of_ships_1 = 0
-                                for i in range(len(team1)):
-                                    sum_of_ships_1 += team1[i]
-                                if sum_of_ships_1 == 0:
-                                    flag_empty_team = True
-                                else:
-                                    flag_empty_team = False
-                            #
-                            # Avrora
-                            if not flag_empty_team:
-                                if all_rockets[2] != 0:
-                                    rocket_results = _simulate_rocket_damage(team1, all_rockets[2], 2, module1, on_blockade_attack, defense_type_mod_1, threshhold)
-                                    team1 = []
-                                    for ship in rocket_results[2]:
-                                        team1.append(ship)
-                                    for i in range(len(rocket_results[0])):
-                                        overall_team1_ships_lost[i] += rocket_results[0][i]
-                                    text = "\nTeam1 ships destroyed by %s %s rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (all_rockets[2], default_missiles_list[2][0], rocket_results[0], team1, overall_team1_ships_lost)
-                                    _log(text)
-                                    print(text)
-                                    sum_of_ships_1 = 0
-                                    for i in range(len(team1)):
-                                        sum_of_ships_1 += team1[i]
-                                    if sum_of_ships_1 == 0:
-                                        flag_empty_team = True
-                                    else:
-                                        flag_empty_team = False
-                            # _simulate_rocket_damage(team1, all_rockets, r_id, module1, att_def_1, defense_type_mod_1, threshhold)
-                            # [team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, all_rockets, _calc_build_time(team1_ships_dead), _calc_build_time(team1)]
-                            #
+
                         flag_empty_team2 = False
                         sum_of_ships_2 = 0
                         for i in range(len(team2)):
@@ -1227,7 +1309,7 @@ def _main():
                             flag_empty_team2 = True
                         if not flag_empty_team and not flag_empty_team2:
                             tab_1_results = _simulate_straight(team1, team2, att_def_1, att_def_2, module1, module2, damage_type_mod_1, damage_type_mod_2, defense_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
-                            # [[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
+                            # return [[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
                             for i in range(len(tab_1_results[0][0])):
                                 overall_team1_ships_lost[i] += tab_1_results[0][0][i]
                             tab_1_results[0][0] = overall_team1_ships_lost
@@ -1312,38 +1394,31 @@ def _main():
                         type_acc_random = False
                         
                         # This is the place for turret and rocket calculations
-                        #if values['t2_blockade'] == "Да":
-                        #    on_blockade = True
-                        #else:
-                        #    on_blockade = False
-                        # Why? Because at the last moment in Closed Beta it was changed to do passive damage if there are rocket missiles present on the planet
-                        if values['t2_do_passive'] == "Да":
-                            do_passive = True
-                        else:
-                            do_passive = False
+                        on_blockade_attack = True
                         on_blockade = False
                         j = int(values['t2_planet_type'][1])
                         k = int(values['t2_planet_mines'][0])
                         planetary_coef = default_planetary_coefs[j][k]
                         turret_level = int(values['t2c6_0'])
                         turret_sum_damage = 100 * planetary_coef * turret_level
-                        all_rockets = [0]
+                        all_rockets = []
                         for i in range(2):
-                            all_rockets.append(int(values['t2c6_' + str(i + 1)]))
+                            all_rockets.append([i + 1, int(values['t2c6_' + str(i + 1)])])
                         text = "\nPlanetary_coef %s, turret_sum_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_sum_damage, turret_level, all_rockets)
                         _log(text)
                         print(text)
-                        to_add_ships_list = []
-                        for i in range(5):
-                            to_add_ships_list.append(_dead_ships_from_turrets(i, module1, defense_type_mod_1, all_rockets, turret_sum_damage, on_blockade, do_passive, threshhold))
+                        # Rocket damage
+                        # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
+                        # return [ships_left, ships_dead]
+                        do_theory = True
+                        to_add_ships_list = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4], all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
                         text = "\nShips will die from turrets or rockets:\n%s\n" % (to_add_ships_list)
                         _log(text)
                         print(text)
                         
                         forstatistics = []
                         needed_ships, damage_left = _calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
-                        #_calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
-                        
+                        # _calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
                         #print(needed_ships)
                         text = "Minimum amount of ships to destroy opponent with %s%% accuracy\n%s" % (accuracy, needed_ships)
                         print(text)
@@ -1356,7 +1431,7 @@ def _main():
                         for i in range(5):
                             forstatistics[i].append(int(damage_left[i]))
                         
-                        #[[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
+                        # return [[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
                         
                         print(forstatistics)
                         for i in range(5):
@@ -1392,11 +1467,6 @@ def _main():
                         s_ids = []
                         for s_i in range(0, 5):
                             s_ids.append(tab_2_results[s_i][0][7])
-                        #for s_i in range(0, 5):
-                        #    for s_j in range(0, 5):
-                        #        if tab_2_results[s_i][0][0][s_j] != 0:
-                        #            s_ids.append(s_j)
-                        #            break
                         names_ids = _translate_id_to_name(s_ids)
                         for i in range(5):
                             window['t2c3' + str(i) + '_0'].update(value = names_ids[i])
@@ -1408,7 +1478,6 @@ def _main():
                             window['t2c3' + str(i) + '_6'].update(value = _separator_for_output(tab_2_results[i][0][1]))
                             window['t2c3' + str(i) + '_7'].update(value = _separator_for_output(int(_my_round_threshhold_up(tab_2_results[i][0][1] + tab_2_results[i][0][3] * 0.02, 0, 0.5))))
                             window['t2c3' + str(i) + '_8'].update(value = _separator_for_output(tab_2_results[i][0][5]))
-                            #window['t2c3' + str(i) + '_9'].update(value = _separator_for_output(dmg_left[i]))
                             window['t2c3' + str(i) + '_9'].update(value = _separator_for_output(tab_2_results[i][2]))
                             
                         for i in range(9):
@@ -1425,10 +1494,6 @@ def _main():
                                 add_text += _separator_for_output(team2[s_i]) + " " + listofships[s_i][0] + "\n"
                         text = "\nSorted list of minimum proposed ship counter in ascending order of lost ships costs:\nN.B.Ship number is for accuracy %s%%, Ships defeated is with accuracy 100%%\nAgainst\n%sCost %s\nBuild time %s\n---------\n\n" % (old_acc, add_text, _separator_for_output(tab_2_results[0][1][3]), _separator_for_output(tab_2_results[0][1][6]))
                         for s_i in range(0, 5):
-                            #for s_j in range(0, 5):
-                            #    if tab_2_results[s_i][0][0][s_j] != 0:
-                            #        s_id = s_j
-                            #        break
                             s_id = s_ids[s_i]
                             text += "    %s    %s\n    %s    lost ships\n%s    lost cost\n%s    build time\n\n" % (_separator_for_output(int(needed_ships[s_id])), listofships[s_id][0], _separator_for_output(int(tab_2_results[s_i][0][0][s_id])), _separator_for_output(int(_my_round_up(tab_2_results[s_i][0][1]))), _separator_for_output(tab_2_results[s_i][0][5]))
                         _log(text)
@@ -1518,11 +1583,6 @@ def _main():
                             s_ids = []
                             for s_i in range(0, 5):
                                 s_ids.append(tab_3_results[s_i][0][7])
-                            #for s_i in range(0, 5):
-                            #    for s_j in range(0, 5):
-                            #        if tab_3_results[s_i][0][0][s_j] != 0:
-                            #            s_ids.append(s_j)
-                            #            break
                             names_ids = _translate_id_to_name(s_ids)
                             for i in range(5):
                                 window['t3c3' + str(i) + '_0'].update(value = names_ids[i])
@@ -1550,10 +1610,6 @@ def _main():
                                     add_text += str(team2[s_i]) + " " + listofships[s_i][0] + "\n"
                             text = "\nSorted list of proposed ship counter with minimum losses in ascending order of lost ships costs:\nUsed accuracy is %s%%\nAgainst\n%sCost %s\n---------\n\n" % (accuracy, add_text, tab_3_results[0][1][3])
                             for s_i in range(0, 5):
-                                #for s_j in range(0, 5):
-                                #    if tab_3_results[s_i][0][0][s_j] != 0:
-                                #        s_id = s_j
-                                #        break
                                 s_id = s_ids[s_i]
                                 text += "%s %s\n%s lost ships cost\n%s\nCost with flyout energy\n%s\n\n" % (int(ships_against[s_id]), listofships[s_id][0], int(tab_3_results[s_i][0][0][s_id]), int(_my_round_up(tab_3_results[s_i][0][1])), int(_my_round_up(tab_3_results[s_i][0][1] + tab_3_results[s_i][0][3] * 0.02)))
                             _log(text)
@@ -1569,18 +1625,18 @@ def _main():
                     k = int(values['t4_planet_mines'][0])
                     planetary_coef = default_planetary_coefs[j][k]
                     turret_damage = 100 * planetary_coef
-                    all_rockets = [0]
+                    all_rockets = [[0, 0]]
                     for i in range(1, 4):
-                        all_rockets.append(int(values['t4_rockets_' + str(i)]))
+                        all_rockets.append([i, int(values['t4_rockets_' + str(i)])])
                     mod = [1 + _my_truncate(int(values['t4_buffs_0']) / 100, 5), 1 + _my_truncate(int(values['t4_buffs_1']) / 100, 5)]
                     text = "Buffs for Valkyr: %s" % (mod)
                     _log(text)
                     print(text)
-                    # Why? Because at the last moment in Closed Beta it was changed to do passive damage if there are rocket missiles present on the planet
-                    if values['t4_do_passive'] == "Да":
-                        do_passive = True
-                    else:
-                        do_passive = False
+                    #if values['t4_do_passive'] == "Да":
+                    #    do_passive = True
+                    #else:
+                    #    do_passive = False
+                    do_passive = True
                     tab_4_results, valkyr_needed_shield_list, valkyr_dead_shield_list = _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod)
                     valkyr_out_of = [valkyr_needed_shield_list, valkyr_dead_shield_list]
                     for j in range(3):
@@ -1988,6 +2044,8 @@ def _battle_logic_straight_damage(team2, damage1, mod2, defense_type_mod, state_
         sum_of_prior_mult_ship += toadd
         each_ship_prior_mult_ship.append(toadd)
         i += 1
+    if sum_of_prior_mult_ship == 0:
+        return team2, damage1
     for elem in each_ship_prior_mult_ship:
         list_of_pri_percent.append(_my_round_threshhold_up(elem / sum_of_prior_mult_ship, 7, 0.5))
     text = "list_of_priorities_percent %s" % (list_of_pri_percent)
@@ -2236,6 +2294,8 @@ def _battle_logic_simple(team2, damage1, mod2, defense_type_mod, state_att_def, 
         sum_of_prior_mult_ship += toadd
         each_ship_prior_mult_ship.append(toadd)
         i += 1
+    if sum_of_prior_mult_ship == 0:
+        return team2, damage1, 0
     for elem in each_ship_prior_mult_ship:
         list_of_pri_percent.append(_my_round_threshhold_up(elem / sum_of_prior_mult_ship, 7, 0.5))
     text = "list_of_priorities_percent %s" % (list_of_pri_percent)
@@ -2376,6 +2436,7 @@ def _simulate_simple(team1, team2, att_def_2, module1, module2, damage_type_mod_
     print(text)
     return to_return
 
+# not used anymore
 def _deal_damage_with_rockets_bombardment(all_rockets, turret_damage, turret_level, threshhold, mod):
     text = "Deal Damage with Rockets Bombardment mod is %s" % (mod)
     _log(text)
@@ -2383,7 +2444,7 @@ def _deal_damage_with_rockets_bombardment(all_rockets, turret_damage, turret_lev
     rocket_damage = 0
     rail_damage = 0
     for i in range(len(all_rockets)):
-        rocket_damage += all_rockets[i] * default_missiles_list[i][1] * default_missiles_list[i][2]
+        rocket_damage += all_rockets[i] * listofrockets[i][1] * listofrockets[i][2]
     rail_damage = turret_damage * turret_level
     text = "rocket damage %s, passive damage %s" % (rocket_damage, rail_damage)
     _log(text)
@@ -2497,6 +2558,7 @@ def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag,
     return valkyr_needed_final, valkyr_dead_sum, valkyr_needed, valkyr_dead
 
 def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod):
+    defense_type_mod = [1, 1, 1, 1, 1]
     turret_level = all_buildings[8]
     shield_defenses = all_buildings[9] * default_buildings_defense_list[9][1]
     turret_defenses = all_buildings[8] * default_buildings_defense_list[8][1]
@@ -2508,9 +2570,22 @@ def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold,
     _log(text)
     print(text)
     
-    valkyr_dead_from_rockets, valkyr_dead_passive = _deal_damage_with_rockets_bombardment(all_rockets, turret_damage, turret_level, threshhold, mod)
+    # Rocket damage
+    # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
+    # return [ships_left, ships_dead]
+    on_blockade_attack = True
+    on_blockade = False
+    do_theory = True
+    turret_sum_damage = turret_damage * turret_level
+    valkyr_dead_passive = int(_my_round_threshhold_up(turret_sum_damage / (listofships[7][14] * mod[1] * defense_type_mod[4]), 0, threshhold))
+    valkyr_dead_from_rockets_list = _simulate_damage_with_rockets_universal([7], all_rockets, 0, mod, defense_type_mod, on_blockade_attack, on_blockade, do_theory, threshhold)
+    valkyr_dead_from_rockets = valkyr_dead_from_rockets_list[0]
+    text = "\nShips will die from turrets %s\n and rockets %s\n" % (valkyr_dead_passive, valkyr_dead_from_rockets)
+    _log(text)
+    print(text)
+    
     valkyr_dead_from_turrets = valkyr_dead_passive
-    if (all_rockets[1] != 0 or all_rockets[2] != 0 or all_rockets[3] != 0) and all_buildings[9] == 0:
+    if (all_rockets[1][1] != 0 or all_rockets[2][1] != 0 or all_rockets[3][1] != 0) and all_buildings[9] == 0:
         if do_passive:
             valkyr_dead_from_turrets = valkyr_dead_from_rockets + valkyr_dead_passive
         else:
@@ -2568,36 +2643,35 @@ def _simulate_turret_damage(team1, module1, turret_sum_damage, defense_type_mod_
     text = "Defense mod against specific damage type:\n%s" %(defense_type_mod_1)
     _log(text)
     print(text)
-    team1_comp = _team_into_id_ship(team1)
+    #team1_comp = _team_into_id_ship(team1)
     team2_damages = [[0, 0], [1, 0], [2, 0], [3, 0], [4, turret_sum_damage]]
     
     # battle logic turrets vs team1
-    team1_ships_left, team2_damage_left = _battle_logic_straight_damage(team1_comp, team2_damages, mod1, defense_type_mod_1, True, threshhold)
+    team1_ships_left_return, team2_damage_left = _battle_logic_straight_damage(team1, team2_damages, mod1, defense_type_mod_1, True, threshhold)
     
-    team1_ships_left = _expand_list(team1_ships_left)
-    team1_ships_dead = _subtract_in_list(team1, team1_ships_left)
+    team1_ships_left = _expand_list(team1_ships_left_return)
+    #team1_ships_dead = _subtract_in_list(team1, team1_ships_left)
     
     for i in range(len(team1_ships_left)):
-        team1_ships_dead[i] = int(_my_round_threshhold_up(team1_ships_dead[i], 0, threshhold))
+        team1_ships_left[i] = _my_round_threshhold_up(team1_ships_left[i], 6, threshhold)
+        #team1_ships_dead[i] = int(_my_round_threshhold_up(team1_ships_dead[i], 0, threshhold))
     
-    team1_ships_left = _subtract_in_list(team1, team1_ships_dead)
+    team1_ships_dead = _subtract_in_list(_expand_list(team1), team1_ships_left)
+    #team1_ships_left = _subtract_in_list(team1, team1_ships_dead)
     
     #team1_comp = _team_into_id_ship(team1)
 
-    team1_cost = _calc_energy_cost(team1_comp)
-    for_cost_1 = _team_into_id_ship(team1_ships_dead)
-    team1_cost_dead = _calc_energy_cost(for_cost_1)
-
-    text = "\n\n%s\n\nTurrets vs Team:\nStarting\n%s\nEnergy cost\n%s\nDestroyed\n%s\nEnergy cost\n%s + %s = %s\nAlive\n%s\nTurret Damage left\n%s\n\n" % (mod1, team1, team1_cost, team1_ships_dead, team1_cost_dead, _my_round_threshhold_up(team1_cost * 0.02, 0, 0.5), _my_round_threshhold_up(team1_cost_dead + team1_cost * 0.02, 0, 0.5), team1_ships_left, team2_damage_left)
+    text = "\n\n%s\n\nTurrets vs Team:\nStarting\n%s\nDestroyed\n%s\nAlive\n%s\nTurret Damage left\n%s\n\n" % (mod1, team1, team1_ships_dead, team1_ships_left, team2_damage_left)
     _log(text)
     print(text)
-    return [team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team2_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1)]
+    return team1_ships_left_return
 
+# not used anymore
 def _battle_logic_rockets_damage(team1, all_rockets, r_id, mod1, defense_type_mod, state_att_def, threshhold):
     flag_ships = False
     flag_damage = False
     do_again = False
-    text = "\n%s missileheads %s \n vs \nships %s" % (default_missiles_list[r_id][0], all_rockets, team1)
+    text = "\n%s missileheads %s \n vs \nships %s" % (listofrockets[r_id][0], all_rockets, team1)
     _log(text)
     print(text)
     list_of_priorities = []
@@ -2647,7 +2721,7 @@ def _battle_logic_rockets_damage(team1, all_rockets, r_id, mod1, defense_type_mo
         list_of_list_dam_per_ship[i].append([0, 0])
         list_of_list_dam_per_ship[i].append([1, 0])
         list_of_list_dam_per_ship[i].append([2, 0])
-        list_of_list_dam_per_ship[i].append([3, list_of_rocket_per_ship_type[i] * default_missiles_list[r_id][2]])
+        list_of_list_dam_per_ship[i].append([3, list_of_rocket_per_ship_type[i] * listofrockets[r_id][2]])
         list_of_list_dam_per_ship[i].append([4, 0])
     text = "list_of_damage_per_ship_type:"
     _log(text)
@@ -2706,7 +2780,7 @@ def _battle_logic_rockets_damage(team1, all_rockets, r_id, mod1, defense_type_mo
     
     summ = 0
     for h in range(len(list_of_list_dam_per_ship)):
-        temp = _my_round_down(list_of_list_dam_per_ship[h][3][1] / default_missiles_list[r_id][2])
+        temp = _my_round_down(list_of_list_dam_per_ship[h][3][1] / listofrockets[r_id][2])
         summ += temp
     if summ != 0:
         flag_damage = True
@@ -2737,13 +2811,14 @@ def _battle_logic_rockets_damage(team1, all_rockets, r_id, mod1, defense_type_mo
                 team1.append(ships)
     
     if do_again:
-        text = "\n\n%s %s missileheads left, ships left: %s. Do battle logic again\n\n" % (all_rockets, default_missiles_list[r_id][0], team1)
+        text = "\n\n%s %s missileheads left, ships left: %s. Do battle logic again\n\n" % (all_rockets, listofrockets[r_id][0], team1)
         _log(text)
         print(text)
         team1, all_rockets = _battle_logic_rockets_damage(team1, all_rockets, r_id, mod1, defense_type_mod, state_att_def, threshhold)
     
     return team1, all_rockets
-    
+
+# not used anymore
 def _simulate_rocket_damage(team1, all_rockets, r_id, module1, att_def_1, defense_type_mod_1, threshhold):
     text = "Simulate Rocket mod is %s" % (module1)
     _log(text)
@@ -2771,17 +2846,18 @@ def _simulate_rocket_damage(team1, all_rockets, r_id, module1, att_def_1, defens
     team1_cost = _calc_energy_cost(team1_comp)
     for_cost_1 = _team_into_id_ship(team1_ships_dead)
     team1_cost_dead = _calc_energy_cost(for_cost_1)
-    all_rockets = int(all_rockets / default_missiles_list[r_id][1])
+    all_rockets = int(all_rockets / listofrockets[r_id][1])
 
-    text = "\n\n%s\n\n%s %s Rockets vs Team:\nStarting\n%s\nEnergy cost\n%s\nDestroyed\n%s\nEnergy cost\n%s + %s = %s\nAlive\n%s\nRockets left\n%s\n\n" % (mod1, start_rockets, default_missiles_list[r_id][0], team1, team1_cost, team1_ships_dead, team1_cost_dead, _my_round_threshhold_up(team1_cost * 0.02, 0, 0.5), _my_round_threshhold_up(team1_cost_dead + team1_cost * 0.02, 0, 0.5), team1_ships_left, all_rockets)
+    text = "\n\n%s\n\n%s %s Rockets vs Team:\nStarting\n%s\nEnergy cost\n%s\nDestroyed\n%s\nEnergy cost\n%s + %s = %s\nAlive\n%s\nRockets left\n%s\n\n" % (mod1, start_rockets, listofrockets[r_id][0], team1, team1_cost, team1_ships_dead, team1_cost_dead, _my_round_threshhold_up(team1_cost * 0.02, 0, 0.5), _my_round_threshhold_up(team1_cost_dead + team1_cost * 0.02, 0, 0.5), team1_ships_left, all_rockets)
     _log(text)
     print(text)
     return [team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, all_rockets, _calc_build_time(team1_ships_dead), _calc_build_time(team1)]
 
+# not used anymore
 def _dead_ships_from_turrets(s_id, mod, defense_type_mod, all_rockets, turret_sum_damage, on_blockade, do_passive, threshhold):
     if on_blockade:
-        dead_from_rockets_sticks = int(_my_round_threshhold_up(all_rockets[0] * default_missiles_list[0][1] * default_missiles_list[0][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
-        dead_from_rockets_avrora = int(_my_round_threshhold_up(all_rockets[2] * default_missiles_list[2][1] * default_missiles_list[2][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
+        dead_from_rockets_sticks = int(_my_round_threshhold_up(all_rockets[0] * listofrockets[0][1] * listofrockets[0][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
+        dead_from_rockets_avrora = int(_my_round_threshhold_up(all_rockets[2] * listofrockets[2][1] * listofrockets[2][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
         return dead_from_rockets_sticks + dead_from_rockets_avrora
     else:
         if all_rockets[1] == 0 and all_rockets[2] == 0:
@@ -2792,10 +2868,239 @@ def _dead_ships_from_turrets(s_id, mod, defense_type_mod, all_rockets, turret_su
                 dead_from_turrets = int(_my_round_threshhold_up(turret_sum_damage / (listofships[s_id][14] * mod[1] * defense_type_mod[4]), 0, threshhold))
             else:
                 dead_from_turrets = 0
-            dead_from_rockets_cobra = int(_my_round_threshhold_up(all_rockets[1] * default_missiles_list[1][1] * default_missiles_list[1][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
-            dead_from_rockets_avrora = int(_my_round_threshhold_up(all_rockets[2] * default_missiles_list[2][1] * default_missiles_list[2][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
+            dead_from_rockets_cobra = int(_my_round_threshhold_up(all_rockets[1] * listofrockets[1][1] * listofrockets[1][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
+            dead_from_rockets_avrora = int(_my_round_threshhold_up(all_rockets[2] * listofrockets[2][1] * listofrockets[2][2] / (listofships[s_id][13] * mod[1] * defense_type_mod[3]), 0, threshhold))
             return dead_from_rockets_cobra + dead_from_rockets_avrora + dead_from_turrets
 
+def _deal_damage_with_rockets_universal(ship, rocket, module, defense_type_mod, threshhold):
+    # ship is a list [ship_id, quantity]
+    # rocket is a list [rocket_id, quantity]
+    text = "\nDealing damage with %s %s against %s %s" % (rocket[1], listofrockets[rocket[0]][0], ship[1], listofships[ship[0]][0])
+    _log(text)
+    print(text)
+    single_ship_health = _my_round_threshhold_up(listofships[ship[0]][13] * module[1] * defense_type_mod[3], 2, threshhold)
+    text = "single_ship_health vs single_missilehead_damage:\n%s vs %s" % (single_ship_health, listofrockets[rocket[0]][2])
+    _log(text)
+    print(text)
+    if listofrockets[rocket[0]][2] >= single_ship_health:
+        missile_damage = single_ship_health
+    else:
+        missile_damage = listofrockets[rocket[0]][2]
+    text = "missile_damage set to %s" % (missile_damage)
+    _log(text)
+    print(text)
+    number_of_missileheads = listofrockets[rocket[0]][1]
+    ship_total_health = single_ship_health * ship[1]
+    rocket_total_damage = number_of_missileheads * missile_damage * rocket[1]
+    text = "ship_total_health vs rocket_total_damage:\n%s vs %s" % (ship_total_health, rocket_total_damage)
+    _log(text)
+    print(text)
+    if ship_total_health > rocket_total_damage:
+        ship_left = _my_round_threshhold_up((ship_total_health - rocket_total_damage) / single_ship_health, 6, threshhold)
+        rocket_left = 0
+    elif ship_total_health == rocket_total_damage:
+        ship_left = 0
+        rocket_left = 0
+    else:
+        ship_left = 0
+        rocket_left = int((rocket_total_damage - ship_total_health) / (missile_damage * listofrockets[rocket[0]][1]))
+    text = "%s %s left, %s %s left\n" % (ship_left, listofships[ship[0]][0], rocket_left, listofrockets[rocket[0]][0])
+    _log(text)
+    print(text)
+    theory_dead = int(_my_round_threshhold_up(rocket_total_damage / single_ship_health, 0, threshhold))
+    return ship_left, rocket_left, theory_dead
+
+def _battle_logic_damage_with_rockets_universal(team1, r_id, all_rockets, module, defense_type_mod, state_att_def, threshhold):
+    flag_ships = False
+    flag_damage = False
+    do_again = False
+    text = "\n%s %s \n vs \nships %s" % (all_rockets, listofrockets[r_id][0], team1)
+    _log(text)
+    print(text)
+    list_of_priorities = []
+    i = 0
+    for ships in team1:
+        h = ships[0]
+        if state_att_def:
+            list_of_priorities.append(listofships[h][6])
+        else:
+            list_of_priorities.append(listofships[h][7])
+        i += 1
+    list_of_pri_percent = []
+    
+    i = 0
+    sum_of_prior_mult_ship = 0
+    each_ship_prior_mult_ship = []
+    for ships in team1:
+        toadd = ships[1] * list_of_priorities[i]
+        sum_of_prior_mult_ship += toadd
+        each_ship_prior_mult_ship.append(toadd)
+        i += 1
+    if sum_of_prior_mult_ship == 0:
+        return team1, all_rockets
+    for elem in each_ship_prior_mult_ship:
+        list_of_pri_percent.append(_my_round_threshhold_up(elem / sum_of_prior_mult_ship, 7, 0.5))
+    text = "list_of_priorities_percent %s" % (list_of_pri_percent)
+    _log(text)
+    print(text)
+    
+    list_of_rockets_per_ship_type = []
+    
+    sum_of_rockets = 0
+    for j in range(0, len(team1) - 1):
+        rockets = int(_my_round_threshhold_up(all_rockets * list_of_pri_percent[j], 0, threshhold))
+        list_of_rockets_per_ship_type.append(rockets)
+        sum_of_rockets += rockets
+    check_left_rockets = all_rockets - sum_of_rockets
+    if check_left_rockets < 0:
+        list_of_rockets_per_ship_type.append(0)
+    else:
+        list_of_rockets_per_ship_type.append(check_left_rockets)
+    text = "list_of_rockets_per_ship_type:\n%s" % (list_of_rockets_per_ship_type)
+    _log(text)
+    print(text)
+    
+    all_rockets = 0
+    for j in range(0, len(team1)):
+        text = "Battle Rocket Logic Iteration № %s" % (j)
+        _log(text)
+        print(text)
+        start_ships = team1[j][1]
+        start_rockets = list_of_rockets_per_ship_type[j]
+        ships_left, rockets_left, theory_dead = _deal_damage_with_rockets_universal([team1[j][0], team1[j][1]], [r_id, start_rockets], module, defense_type_mod, threshhold)
+        all_rockets += rockets_left
+        if ships_left > 0:
+            text = "ships alive and no rockets left\n"
+            _log(text)
+            print(text)
+            team1[j][1] = ships_left
+        else:
+            text = "All (%s) ships id %s destroyed" % (start_ships, listofships[team1[j][0]][0])
+            _log(text)
+            print(text)
+            text = "Rockets left %s %s\n" % (rockets_left, listofrockets[r_id][0])
+            _log(text)
+            print(text)
+            team1[j][1] = 0
+        text = "team1 ships left %s" % (team1)
+        _log(text)
+        print(text)
+    
+    text = "All_rockets left %s" % (all_rockets)
+    _log(text)
+    print(text)
+    
+    if all_rockets > 0:
+        flag_damage = True
+    
+    for ships in team1:
+        if ships[1] != 0:
+            flag_ships = True
+            break
+    
+    if flag_ships:
+        if flag_damage:
+            do_again = True
+        else:
+            do_again = False
+    
+    if do_again:
+        new = []
+        for ships in team1:
+            new.append(ships)
+        team1.clear()
+        for ships in new:
+            if ships[1] != 0:
+                team1.append(ships)
+    
+    if do_again:
+        text = "\n\n%s %s left, ships left: %s. Do battle logic again\n\n" % (all_rockets, listofrockets[r_id][0], team1)
+        _log(text)
+        print(text)
+        team1, all_rockets = _battle_logic_damage_with_rockets_universal(team1, r_id, all_rockets, module, defense_type_mod, state_att_def, threshhold)
+    
+    return team1, all_rockets
+
+def _simulate_damage_with_rockets_universal(team1, all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold):
+    if do_theory:
+        # if do_theory then in team1 there will be only ship ids without quantity
+        #       and in all_rockets there could be Cobra, Avrora and X-Ray
+        theory_dead_list_summary = []
+        theory_dead_list_per_rocket_type = []
+        all_rockets_len = len(all_rockets)
+        for i in range(all_rockets_len):
+            theory_dead_list_per_rocket_type.append([])
+            for t in team1:
+                ships_left, rockets_left, theory_dead = _deal_damage_with_rockets_universal([t, 1], [all_rockets[i][0], all_rockets[i][1]], module1, defense_type_mod_1, threshhold)
+                theory_dead_list_per_rocket_type[i].append(theory_dead)
+        theory_dead_list_per_rocket_type.append([])
+        for t in team1:
+            theory_dead_list_per_rocket_type[all_rockets_len].append(int(_my_round_threshhold_up(turret_sum_damage / (listofships[t][14] * module1[1] * defense_type_mod_1[4]), 0, threshhold)))
+        for j in range(len(theory_dead_list_per_rocket_type[0])):
+            summ = 0
+            for i in range(len(theory_dead_list_per_rocket_type)):
+                summ += theory_dead_list_per_rocket_type[i][j]
+            theory_dead_list_summary.append(summ)
+        
+        return theory_dead_list_summary
+    text = "\nSimulate Damage with Rockets Universal"
+    _log(text)
+    print(text)
+    text = "Defense mod against specific damage type:\n%s" %(defense_type_mod_1)
+    _log(text)
+    print(text)
+    start_rockets = []
+    i = 0
+    for rocket in all_rockets:
+        start_rockets.append([all_rockets[i][0], all_rockets[i][1]])
+        i += 1
+    team1_comp = _team_into_id_ship(team1)
+    team1_ships_left = []
+    for ship in team1_comp:
+        team1_ships_left.append(ship)
+    
+    if on_blockade:
+        state_att_def = on_blockade_state_att_def
+        for i in range(len(all_rockets)):
+            r_id = all_rockets[i][0]
+            rockets = all_rockets[i][1]
+            if rockets == 0:
+                continue
+            if r_id == 0 or r_id == 2:
+                team1_ships_left, all_rockets[i][1] = _battle_logic_damage_with_rockets_universal(team1_ships_left, r_id, rockets, module1, defense_type_mod_1, state_att_def, threshhold)
+    else:
+        team1_ships_left = _simulate_turret_damage(team1_ships_left, module1, turret_sum_damage, defense_type_mod_1, threshhold)
+        state_att_def = True
+        for i in range(len(all_rockets)):
+            r_id = all_rockets[i][0]
+            rockets = all_rockets[i][1]
+            if rockets == 0:
+                continue
+            if r_id == 1 or r_id == 2:
+                team1_ships_left, all_rockets[i][1] = _battle_logic_damage_with_rockets_universal(team1_ships_left, r_id, rockets, module1, defense_type_mod_1, state_att_def, threshhold)
+            elif r_id == 3:
+                valkyr = [[7, 0]]
+                for j in range(len(team1_ships_left)):
+                    if team1_ships_left[j][0] == 7:
+                        valkyr = [[7, team1_ships_left[j][1]]]
+                if valkyr[0][1] != 0:
+                    valkyr_left, all_rockets[i][1] = _battle_logic_damage_with_rockets_universal(valkyr, r_id, rockets, module1, defense_type_mod_1, state_att_def, threshhold)
+                    for j in range(len(team1_ships_left)):
+                        if team1_ships_left[j][0] == 7:
+                            team1_ships_left[j][1] = valkyr_left[0][1]
+    
+    team1_ships_left = _expand_list(team1_ships_left)
+    for i in range(len(team1_ships_left)):
+        team1_ships_left[i] = int(_my_round_threshhold_up(team1_ships_left[i], 0, threshhold))
+    team1_ships_dead = _subtract_in_list(team1, team1_ships_left)
+    for i in range(len(team1_ships_dead)):
+        team1_ships_dead[i] = int(_my_round_threshhold_up(team1_ships_dead[i], 0, threshhold))
+    
+    text = "\n\n%s\n\n%s Rockets vs Team:\nStarting\n%s\nDestroyed\n%s\nAlive\n%s\nRockets left\n%s\n\n" % (module1, start_rockets, team1, team1_ships_dead, team1_ships_left, all_rockets)
+    _log(text)
+    print(text)
+    
+    return [team1_ships_left, team1_ships_dead]
 
 #-------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------
