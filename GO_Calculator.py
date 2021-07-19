@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.05
+#version 1.05a
 
 import PySimpleGUI as sg
 import os.path
@@ -478,11 +478,11 @@ def _check_is_a_valid_building_entry(values_list, to_check):
         entry_type = []
         for char in elem:
             try:
-                if char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', ',']:
+                if char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', ',', '.', '+']:
                     raise ValueError
             except ValueError:
                 title = 'Ошибка ввода'
-                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка и запятая.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через запятую - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2, 11*3,10,9.'
+                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка, разделители: запятая, точка, плюсик.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через разделитель - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2. 11*3+10+9'
                 _error_popup_value_error(title, text)
                 return False, []
         all_buildings_raw.append(elem)
@@ -497,7 +497,7 @@ def _check_is_a_valid_building_entry(values_list, to_check):
                 text = 'Некорректный ввод зданий. Уровень здания не может быть больше 30,\nколичество зданий не может быть больше 25.'
             elif all_buildings == 2:
                 title = 'Ошибка ввода'
-                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка и запятая.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через запятую - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2, 11*3,10,9.'
+                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка, разделители: запятая, точка, плюсик.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через разделитель - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2. 11*3+10+9'
             raise ValueError
     except ValueError:
         _error_popup_value_error(title, text)
@@ -565,7 +565,7 @@ def _check_all_buildings_new(all_buildings_raw):
         tmp_to_multiply = ''
         flag_asterisk_met = False
         for char in all_buildings_raw[i]:
-            if char == ',':
+            if char == ',' or char == '.' or char == '+':
                 if len(tmp_to_add) == 0:
                     return False, 2, 0
                 if len(tmp_to_multiply) == 0:
@@ -788,7 +788,7 @@ def _error_popup_value_error(title, text):
 
 def _my_popup_about():
     title = 'О программе'
-    text = 'version 1.05\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
+    text = 'version 1.05a\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
     text += 'Minter Mxe548ae76175bec07bca65010da7c7999db585cd2\n' + 'Long Coin 16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n' + 'Near validol.near'
     text += '\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714'
     layout = [[sg.Multiline(default_text = text, disabled = True, size = (45, 22))], [sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -801,9 +801,9 @@ def _my_popup_about():
 
 def _my_popup_description():
     title = 'Описание возможностей'
-    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.'
+    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- находит кол-во Валькирий для сноса генератора щита и других зданий.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.\n\nЕсли желаете меня отблагодарить, загляните в Help - About.'
     layout = [[sg.Text(text)]]#, [sg.Button('Продолжить')]]
-    window = sg.Window(title, layout, modal = True, size = (600, 450), icon = galaxy_icon)#auto_size_text = True)
+    window = sg.Window(title, layout, modal = True, size = (600, 500), icon = galaxy_icon)#auto_size_text = True)
     while True:
         event, values = window.read()
         if event in ('Продолжить', sg.WIN_CLOSED):
@@ -812,9 +812,9 @@ def _my_popup_description():
 
 def _my_popup_description_first():
     title = 'Описание возможностей'
-    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.\n\n Это описание можно найти в верхнем меню Help - Description.'
+    text = 'Программа производит расчёты по новой механике из большого обновления.\n\nВозможности программы:\n\n- рассчитывает результат боя указанных флотов\n\n- находит примерное минимальное количество кораблей, необходимых для полного\nуничтожения цели в худшем случае рандома указанной меткости: мимо гарантированно\nуйдёт (100 - меткость) % урона. Например, меткость 80%: 20% урона не попало.\nНо после этого остальные расчёты используют 100% меткость, показывая Ваши\nмаксимально возможные потери.\n\n- находит количество кораблей, дающее максимальный бонус к защите (+50%) от\nпревосходства флота, что минимизирует потери.\n\n- находит кол-во Валькирий для сноса генератора щита и других зданий.\n\n- кроме количества уничтоженных кораблей показывает стоимость кораблей в энергии,\nвремя, потраченное для строительства уничтоженных кораблей в секундах и\nсуммарный лишний урон, если есть.\n\n- в верхнем меню в настройках можно менять характеристики кораблей, ракет и глобальных\nпараметров (пока два).\n\n- кроме модулей, есть возможность указать модификаторы урона и защиты от урона, которые\nбудут давать командоры (механика ещё не реализована на ЗБТ), в том числе для\nэксперимента можно указать отрицательные модификаторы.\n\n Это описание можно найти в верхнем меню Help - Description.\n\nЕсли желаете меня отблагодарить, загляните в Help - About.'
     layout = [[sg.Text(text)], [sg.Button('Продолжить')]]
-    window = sg.Window(title, layout, modal = True, size = (600, 500), icon = galaxy_icon)#auto_size_text = True)
+    window = sg.Window(title, layout, modal = True, size = (600, 550), icon = galaxy_icon)#auto_size_text = True)
     while True:
         event, values = window.read()
         if event in ('Продолжить', sg.WIN_CLOSED):
@@ -1734,42 +1734,35 @@ def _main():
         elif event == 'Рассчитать':
             flag_check, all_buildings = _check_is_a_valid_building_entry(values, to_check_ids_tab_4)
             if _check_is_a_positive_number(values, to_check_ids_tab_4_a) and flag_check:
-                #all_buildings_raw = []
-                #for i in range(len(default_buildings_defense_list)):
-                    #all_buildings_raw.append(values['t4_buildings_' + str(i)])
-                    #all_buildings.append(int(values['t4_buildings_' + str(i)]))
-                #flag_check_buildings, all_buildings = _check_all_buildings_new(all_buildings_raw, list_of_entry_type)
-                #if flag_check_buildings:
-                if True:
-                    energy_flag = False # True
-                    j = int(values['t4_planet_type'][1])
-                    k = int(values['t4_planet_mines'][0])
-                    planetary_coef = default_planetary_coefs[j][k]
-                    turret_damage = 100 * planetary_coef
-                    all_rockets = [[0, 0]]
-                    for i in range(1, 4):
-                        all_rockets.append([i, int(values['t4_rockets_' + str(i)])])
-                    mod = [1 + _my_truncate(int(values['t4_buffs_0']) / 100, 5), 1 + _my_truncate(int(values['t4_buffs_1']) / 100, 5)]
-                    text = "Buffs for Valkyr: %s" % (mod)
-                    _log(text)
-                    print(text)
-                    #if values['t4_do_passive'] == "Да":
-                    #    do_passive = True
-                    #else:
-                    #    do_passive = False
-                    do_passive = True
-                    tab_4_results, valkyr_needed_shield_list, valkyr_dead_shield_list = _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod)
-                    valkyr_out_of = [valkyr_needed_shield_list, valkyr_dead_shield_list]
-                    for j in range(3):
-                        for i in range(6):
-                            window['t4_out_' + str(j + 1) + '_' + str(i)].update(value = _separator_for_output(tab_4_results[j][i]))
-                    for j in range(30):
-                        window['t4_out_ss_0_' + str(30 - j)].update(value = _separator_for_output(30 - j))
-                        for i in range(1, 3):
-                            window['t4_out_ss_' + str(i) + '_' + str(30 - j)].update(value = _separator_for_output(valkyr_out_of[i - 1][j]))
+                energy_flag = False # True
+                j = int(values['t4_planet_type'][1])
+                k = int(values['t4_planet_mines'][0])
+                planetary_coef = default_planetary_coefs[j][k]
+                turret_damage = 100 * planetary_coef
+                all_rockets = [[0, 0]]
+                for i in range(1, 4):
+                    all_rockets.append([i, int(values['t4_rockets_' + str(i)])])
+                mod = [1 + _my_truncate(int(values['t4_buffs_0']) / 100, 5), 1 + _my_truncate(int(values['t4_buffs_1']) / 100, 5)]
+                text = "Buffs for Valkyr: %s" % (mod)
+                _log(text)
+                print(text)
+                #if values['t4_do_passive'] == "Да":
+                #    do_passive = True
+                #else:
+                #    do_passive = False
+                do_passive = True
+                tab_4_results, valkyr_needed_shield_list, valkyr_dead_shield_list = _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod)
+                valkyr_out_of = [valkyr_needed_shield_list, valkyr_dead_shield_list]
+                for j in range(3):
+                    for i in range(6):
+                        window['t4_out_' + str(j + 1) + '_' + str(i)].update(value = _separator_for_output(tab_4_results[j][i]))
+                for j in range(30):
+                    window['t4_out_ss_0_' + str(30 - j)].update(value = _separator_for_output(30 - j))
+                    for i in range(1, 3):
+                        window['t4_out_ss_' + str(i) + '_' + str(30 - j)].update(value = _separator_for_output(valkyr_out_of[i - 1][j]))
         elif event == 'Особенности расчёта':
             title = "Особенности расчёта"
-            text = "Расчёты в блоке справа о необходимом количестве Валькирий для уничтожения\nвсех уровней генератора щита за одну атаку имеют некоторую погрешность.\nОтправляйте немного больше. Используйте на свой страх и риск.\n\nРасчёты в блоке снизу используются для последовательного уничтожения уровней\nгенератора щита атаками друг за другом.\nОни достаточно точны, но всё равно стоит отправлять с небольшим запасом.\nЕсли проходит какое-то (неизвестное мне) количество времени, то происходит сброс\nнекоторых параметров в игре.\nТогда надо заново пересчитать Валькирий для текущего значения уровня щита.\n\nПример: Вы отправляли Валькирий согласно расчётам и снесли 5 уровней щита из 20.\nПосле этого Вас что-то отвлекло, прошло 5 минут (например).\nКоличество Валькирий, необходимых для сноса 15го уровня щита фактически\nв игре уже будет другим.\nНужно указать 15й уровень щита в соответствующем поле и нажать Расчитать.\n\nРасчёты по сносу ракетных башен и остальных зданий точны."
+            text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nТакже изменён принцип ввода уровней для зданий:\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик.\n\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через разделитель - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2.11*3+10 + 9"
             _error_popup_value_error(title, text)
     window.close()
 
@@ -1934,6 +1927,17 @@ def _change_ship_to_team_list(ship, s_id):
         else:
             team.append(0)
     return team
+
+def _calc_all_defenses(all_buildings, shield_level):
+    all_defenses = 0
+    for i in range(len(all_buildings)):
+        for bld in all_buildings[i]:
+            if bld > shield_level:
+                bld_to = shield_level
+            else:
+                bld_to = bld
+            all_defenses += bld_to * default_buildings_defense_list[i][1]
+    return all_defenses
 
 def _calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy):
     total_health = []
@@ -2582,7 +2586,7 @@ def _deal_damage_with_rockets_bombardment(all_rockets, turret_damage, turret_lev
     return valkyr_dead_1, valkyr_dead_2
 
 def _calc_valkyr_for_shield(all_buildings, threshhold, energy_flag, valkyr_dead_passive, valkyr_dead_from_rockets, mod, do_passive):
-    text = "Calc Valkyr for Shield mod is %s" % (mod)
+    text = "\nCalc Valkyr for Shield mod is %s\n" % (mod)
     _log(text)
     print(text)
     shield_level = all_buildings[9][0]
@@ -2605,84 +2609,21 @@ def _calc_valkyr_for_shield(all_buildings, threshhold, energy_flag, valkyr_dead_
         valkyr_dead.append(0)
         valkyr_dead_for_test.append(0)
     shield_lvl_now = shield_level
-    all_defenses = 0
-    for i in range(len(all_buildings)):
-        if i != 9:
-            for bld in all_buildings[i]:
-                if bld > shield_lvl_now:
-                    bld_to = shield_lvl_now
-                else:
-                    bld_to = bld
-                all_defenses += bld_to * default_buildings_defense_list[i][1]
     for i in range(shield_level):
-        shield_coef = shield_max_coef - shield_coef_change * (shield_level - shield_lvl_now)
-        text = "shield coef: %s\n" % (shield_coef)
+        all_defenses = _calc_all_defenses(all_buildings, shield_lvl_now)
+        text = "all_defenses for %s shield level: %s" % (shield_lvl_now, all_defenses)
         _log(text)
         print(text)
-        dmg_to_do = _my_round_threshhold_up(_my_truncate((all_defenses * shield_coef + shield_lvl_now * default_buildings_defense_list[9][1] * shield_max_coef), 6), 0, threshhold)
+        dmg_to_do = _my_round_threshhold_up(_my_truncate((all_defenses * shield_max_coef), 6), 6, threshhold)
         damage_to_do.append(dmg_to_do)
         damage_to_do_sum += dmg_to_do
-        valkyr_cycle_flat = _my_round_threshhold_up(damage_to_do[i] / (listofships[7][3] * mod[0]), 6, threshhold)
-        valkyr_cycle = valkyr_cycle_flat
-        #if valkyr_cycle_flat > 0 and valkyr_cycle_flat < 1:
-        #    valkyr_cycle = 1
-        #elif valkyr_cycle_flat >= 1:
-        #    if valkyr_cycle_flat % int(valkyr_cycle_flat) == 0:
-        #        valkyr_cycle = int(valkyr_cycle_flat)
-        #    else:
-        #        valkyr_cycle = int(_my_round_up(valkyr_cycle_flat))
-        valkyr_needed.append(valkyr_cycle)
+        valkyr_needed.append(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][3] * mod[0]), 6, threshhold))
         valkyr_dead.append(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10] * mod[1]), 6, threshhold))
-        print("damage_to_do[i] %s, valkyr_cycle_flat removed, valkyr_cycle %s, valkyr_dead[i] %s" % (damage_to_do[i], valkyr_cycle, valkyr_dead[i+j])) # , valkyr_cycle_flat
+        print("damage_to_do[i] %s, valkyr_needed[i] %s, valkyr_dead[i] %s\n" % (damage_to_do[i], valkyr_needed[i + j], valkyr_dead[i + j]))
         shield_lvl_now -= 1
     
     valkyr_needed_final = _my_round_threshhold_up(damage_to_do_sum / (listofships[7][3] * mod[0]), 6, threshhold)
     valkyr_dead_sum = _my_round_threshhold_up(damage_to_do_sum / (listofships[7][10] * mod[1]), 6, threshhold)
-    
-    """
-    for i in range(shield_level):
-        #shield_coef = shield_coef_30 - (30 - shield_lvl_now) * shield_coef_change
-        #shield_coef = _my_round_threshhold_up(shield_max_coef - shield_coef_change * (shield_level - shield_lvl_now), 3, threshhold)
-        shield_coef = shield_max_coef - shield_coef_change * (shield_level - shield_lvl_now)
-        print("shield coef: %s\n" % (shield_coef))
-        # #backtrackerror # if something goes wrong, check this one line:
-        dmg_to_do = _my_round_threshhold_up(_my_truncate((all_defenses * shield_coef + shield_lvl_now * default_buildings_defense_list[9][1] * shield_max_coef), 6), 0, 0.9)
-        damage_to_do.append(dmg_to_do)
-        valkyr_cycle_flat = damage_to_do[i] / (listofships[7][3] * mod[0])
-        if valkyr_cycle_flat > 0 and valkyr_cycle_flat < 1:
-            valkyr_cycle = 1
-        elif valkyr_cycle_flat >= 1:
-            if valkyr_cycle_flat % int(valkyr_cycle_flat) == 0:
-                valkyr_cycle = int(valkyr_cycle_flat)
-            else:
-                valkyr_cycle = int(_my_round_up(valkyr_cycle_flat))
-        valkyr_needed.append(valkyr_cycle)
-        valkyr_dead.append(int(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10] * mod[1]), 0, threshhold)))
-        print("Valkyr_dead[i] %s, damage_to_do[i] %s, listofships[7][10] %s" % (valkyr_dead[i], damage_to_do[i], listofships[7][10]))
-        valkyr_dead_for_test.append(int(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10]), 0, threshhold)))
-        valkyr_needed_sum += valkyr_cycle
-        valkyr_dead_sum += valkyr_dead[i + j]
-        valkyr_dead_for_test_sum += valkyr_dead_for_test[i + j]
-        shield_lvl_now -= 1
-    """
-    # old way
-    #valkyr_needed_final = valkyr_needed_sum + valkyr_dead_from_turrets
-    #if valkyr_dead_from_rockets == 0:
-    #    valkyr_needed_final = valkyr_needed_sum + valkyr_dead_passive + valkyr_dead_sum
-    #    valkyr_dead_sum += valkyr_dead_passive
-    #else:
-    #    valkyr_needed_final = valkyr_needed_sum + valkyr_dead_from_rockets + valkyr_dead_sum
-    #    valkyr_dead_sum += valkyr_dead_from_rockets
-    
-    # switching to test results
-    #valkyr_needed_final = int(_my_round_up((valkyr_dead_sum + 1) * listofships[7][10] * mod[1] / (listofships[7][3] * mod[0])))
-    #text = "Test Valkyr number with mod defense without turret and rocket lossess for reference: %s" % (valkyr_needed_final)
-    #_log(text)
-    #print(text)
-    #valkyr_needed_final = int(_my_round_up((valkyr_dead_for_test_sum + 1) * listofships[7][10] / (listofships[7][3] * mod[0])))
-    #text = "Test Final(?) Valkyr number without mod defense without turret and rocket lossess: %s" % (valkyr_needed_final)
-    #_log(text)
-    #print(text)
     
     if valkyr_dead_from_rockets == 0:
         valkyr_dead_sum += valkyr_dead_passive
