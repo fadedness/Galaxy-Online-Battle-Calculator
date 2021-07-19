@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.04
+#version 1.05
 
 import PySimpleGUI as sg
 import os.path
@@ -127,18 +127,18 @@ default_mines_quantity = [
     '5 шахт'
 ]
 
-# Название, прочность за уровень
+# Название, прочность за уровень, максимальное кол-во зданий на планете
 default_buildings_defense_list = [
-    ['Командный центр', 700],
-    ['Шахта', 500],
-    ['Склад', 250],
-    ['Торговый центр', 400],
-    ['Космопорт', 450],
-    ['Завод космолётов', 550],
-    ['Энергостанция', 300],
-    ['Станция обнаружения', 350],
-    ['Ракетная башня', 650],
-    ['Генератор щита', 750]
+    ['Командный центр', 700, 1],
+    ['Шахта', 500, 5],
+    ['Склад', 250, 21],
+    ['Торговый центр', 400, 1],
+    ['Космопорт', 450, 9],
+    ['Завод космолётов', 550, 5],
+    ['Энергостанция', 300, 1],
+    ['Станция обнаружения', 350, 1],
+    ['Ракетная башня', 650, 20],
+    ['Генератор щита', 750, 1]
 ]
 
 # Название, кол-во боеголовок, урон от боеголовки, цена, время постройки
@@ -465,6 +465,48 @@ def _check_is_a_positive_number(values_list, to_check):
             return False
     return True
 
+def _check_is_a_valid_building_entry(values_list, to_check):
+    list_of_entry_type = []
+    # types:
+    # 0 - just a number
+    # 1 - number * number == level of building * number of that buildings, semicolon for multiple entries
+    # 2 - number, number, number == level of each building, -=-, -=-, -=-
+    all_buildings_raw = []
+    for check in to_check:
+        elem = values_list[check]
+        elem = elem.replace(" ", "")
+        entry_type = []
+        for char in elem:
+            try:
+                if char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', ',']:
+                    raise ValueError
+            except ValueError:
+                title = 'Ошибка ввода'
+                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка и запятая.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через запятую - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2, 11*3,10,9.'
+                _error_popup_value_error(title, text)
+                return False, []
+        all_buildings_raw.append(elem)
+    try:
+        flag_to_return, all_buildings, s_id = _check_all_buildings_new(all_buildings_raw)
+        if not flag_to_return:
+            if all_buildings == 3:
+                title = 'Ошибка ввода'
+                text = 'Некорректный ввод уровня здания. Сумма уровней для здания %s не может быть больше %s,\nа количество - больше %s.' % (default_buildings_defense_list[s_id][0], default_buildings_defense_list[s_id][2] * 30, default_buildings_defense_list[s_id][2])
+            elif all_buildings == 1:
+                title = 'Ошибка ввода'
+                text = 'Некорректный ввод зданий. Уровень здания не может быть больше 30,\nколичество зданий не может быть больше 25.'
+            elif all_buildings == 2:
+                title = 'Ошибка ввода'
+                text = 'Некорректный ввод для уровня зданий, допустимый ввод - числа, звёздочка и запятая.\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через запятую - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2, 11*3,10,9.'
+            raise ValueError
+    except ValueError:
+        _error_popup_value_error(title, text)
+        return False, []
+    text = "Проверены и загружены здания: %s" % (all_buildings)
+    _log(text)
+    print(text)
+    return True, all_buildings
+
 def _check_is_a_number(values_list, to_check):
     for elem in to_check:
         try:
@@ -512,6 +554,76 @@ def _check_is_a_positive_number_global(to_check):
         _error_popup_value_error(title, text)
         return False
     return True
+
+def _check_all_buildings_new(all_buildings_raw):
+    all_buildings = []
+    for i in range(len(all_buildings_raw)):
+        all_buildings.append([])
+        all_buildings_raw[i] += ':'
+        to_add_buildings = []
+        tmp_to_add = ''
+        tmp_to_multiply = ''
+        flag_asterisk_met = False
+        for char in all_buildings_raw[i]:
+            if char == ',':
+                if len(tmp_to_add) == 0:
+                    return False, 2, 0
+                if len(tmp_to_multiply) == 0:
+                    tmp_to_multiply += '1'
+                for j in range(int(tmp_to_multiply)):
+                    if int(tmp_to_add) > 30:
+                        return False, 1, 0
+                    to_add_buildings.append(int(tmp_to_add))
+                tmp_to_add = ''
+                tmp_to_multiply = ''
+                flag_asterisk_met = False
+            elif char == '*' and not flag_asterisk_met:
+                if len(tmp_to_add) == 0:
+                    return False, 2, 0
+                flag_asterisk_met = True
+            elif char == '*' and flag_asterisk_met:
+                return False, 2, 0
+            elif char in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                if flag_asterisk_met:
+                    tmp_to_multiply += char
+                else:
+                    tmp_to_add += char
+            elif char == ':' and len(tmp_to_add) != 0:
+                if len(tmp_to_multiply) == 0:
+                    tmp_to_multiply += '1'
+                for j in range(int(tmp_to_multiply)):
+                    if int(tmp_to_add) > 30:
+                        return False, 1, 0
+                    to_add_buildings.append(int(tmp_to_add))
+        for bld in to_add_buildings:
+            all_buildings[i].append(bld)
+        
+    len_sum = 0
+    lvl_sum_sum = 0
+    s_id = 0
+    for elem in all_buildings:
+        for i in range(len(elem)):
+            if elem[i] != 0:
+                len_sum += 1
+        lvl_sum = 0
+        if len(elem) == 0:
+            all_buildings[s_id].append(0)
+        for sub_elem in elem:
+            lvl_sum += sub_elem
+        if lvl_sum > default_buildings_defense_list[s_id][2] * 30:
+            return False, 3, s_id
+        if len(elem) > default_buildings_defense_list[s_id][2]:
+            return False, 3, s_id
+        lvl_sum_sum += lvl_sum
+        s_id += 1
+    text = "Количество зданий = %s, Суммарный уровень = %s" % (len_sum, lvl_sum_sum)
+    _log(text)
+    print(text)
+    if len_sum > 25:
+        return False, 1, 0
+    if lvl_sum_sum > 750:
+        return False, 1, 0
+    return True, all_buildings, 0
 
 def _check_all_buildings(all_buildings):
     title = 'Ошибка ввода'
@@ -676,7 +788,7 @@ def _error_popup_value_error(title, text):
 
 def _my_popup_about():
     title = 'О программе'
-    text = 'version 1.04\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
+    text = 'version 1.05\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
     text += 'Minter Mxe548ae76175bec07bca65010da7c7999db585cd2\n' + 'Long Coin 16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n' + 'Near validol.near'
     text += '\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714'
     layout = [[sg.Multiline(default_text = text, disabled = True, size = (45, 22))], [sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -1132,26 +1244,27 @@ def _main():
     to_check_ids_tab_3 = ['t3c2_' + str(i) for i in range(9)]
     to_check_ids_tab_3_a = ['t3c1m_' + str(i) for i in range(12)] + ['t3c2m_' + str(i) for i in range(12)]
     to_check_ids_tab_3_b = ['t3_acc']
-    to_check_ids_tab_4 = ['t4_buildings_' + str(i) for i in range(len(default_buildings_defense_list))] + ['t4_rockets_' + str(i) for i in range(1, 4)] + ['t4_buffs_' + str(i) for i in range(2)]
+    to_check_ids_tab_4 = ['t4_buildings_' + str(i) for i in range(len(default_buildings_defense_list))]
+    to_check_ids_tab_4_a = ['t4_rockets_' + str(i) for i in range(1, 4)] + ['t4_buffs_' + str(i) for i in range(2)]
     text = "to_check_ids_tab_1 list:\n%s" % (to_check_ids_tab_1)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_1_a list:\n%s\nand tab_1_b: %s\nand tab_1_c: %s" % (to_check_ids_tab_1_a, to_check_ids_tab_1_b, to_check_ids_tab_1_c)
+    text = "to_check_ids_tab_1_a list:\n%s\nand tab_1_b:\n%s\nand tab_1_c:\n%s" % (to_check_ids_tab_1_a, to_check_ids_tab_1_b, to_check_ids_tab_1_c)
     _log(text)
     print(text)
     text = "to_check_ids_tab_2 list:\n%s" % (to_check_ids_tab_2)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_2_a list:\n%s\nand tab_2_b: %s" % (to_check_ids_tab_2_a, to_check_ids_tab_2_b)
+    text = "to_check_ids_tab_2_a list:\n%s\nand tab_2_b:\n%s" % (to_check_ids_tab_2_a, to_check_ids_tab_2_b)
     _log(text)
     print(text)
     text = "to_check_ids_tab_3 list:\n%s" % (to_check_ids_tab_3)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_3_a list:\n%s\nand tab_3_b: %s" % (to_check_ids_tab_3_a, to_check_ids_tab_3_b)
+    text = "to_check_ids_tab_3_a list:\n%s\nand tab_3_b:\n%s" % (to_check_ids_tab_3_a, to_check_ids_tab_3_b)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_4 list:\n%s" % (to_check_ids_tab_4)
+    text = "to_check_ids_tab_4 list:\n%s\n and tab_4_a:\n%s" % (to_check_ids_tab_4, to_check_ids_tab_4_a)
     _log(text)
     print(text)
     menu_def = [['&File', 'E&xit'], ['Se&ttings', ['Ships', 'Rockets', 'Globals']], ['&Help', ['Description', 'About...']]]
@@ -1411,7 +1524,11 @@ def _main():
                         # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
                         # return [ships_left, ships_dead]
                         do_theory = True
-                        to_add_ships_list = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4], all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                        to_add_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4], all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                        print(to_add_ships_list_raw)
+                        to_add_ships_list = []
+                        for rrr in to_add_ships_list_raw:
+                            to_add_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
                         text = "\nShips will die from turrets or rockets:\n%s\n" % (to_add_ships_list)
                         _log(text)
                         print(text)
@@ -1615,11 +1732,15 @@ def _main():
                             _log(text)
                             print(text)
         elif event == 'Рассчитать':
-            if _check_is_a_positive_number(values, to_check_ids_tab_4):
-                all_buildings = []
-                for i in range(len(default_buildings_defense_list)):
-                    all_buildings.append(int(values['t4_buildings_' + str(i)]))
-                if _check_all_buildings(all_buildings):
+            flag_check, all_buildings = _check_is_a_valid_building_entry(values, to_check_ids_tab_4)
+            if _check_is_a_positive_number(values, to_check_ids_tab_4_a) and flag_check:
+                #all_buildings_raw = []
+                #for i in range(len(default_buildings_defense_list)):
+                    #all_buildings_raw.append(values['t4_buildings_' + str(i)])
+                    #all_buildings.append(int(values['t4_buildings_' + str(i)]))
+                #flag_check_buildings, all_buildings = _check_all_buildings_new(all_buildings_raw, list_of_entry_type)
+                #if flag_check_buildings:
+                if True:
                     energy_flag = False # True
                     j = int(values['t4_planet_type'][1])
                     k = int(values['t4_planet_mines'][0])
@@ -1680,6 +1801,10 @@ def _my_round_down(number):
 def _my_round_threshhold_up(n, decimals, threshhold):
     multiplier = 10 ** decimals
     return math.floor(n*multiplier + threshhold) / multiplier
+
+def _my_round_threshhold_down(n, decimals, threshhold):
+    multiplier = 10 ** decimals
+    return math.ceil(n*multiplier - threshhold) / multiplier
 
 def _overwhelming(ships_list):
     totaldefense = 0
@@ -2456,16 +2581,18 @@ def _deal_damage_with_rockets_bombardment(all_rockets, turret_damage, turret_lev
     print(text)
     return valkyr_dead_1, valkyr_dead_2
 
-def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag, valkyr_dead_passive, valkyr_dead_from_rockets, mod, do_passive):
+def _calc_valkyr_for_shield(all_buildings, threshhold, energy_flag, valkyr_dead_passive, valkyr_dead_from_rockets, mod, do_passive):
     text = "Calc Valkyr for Shield mod is %s" % (mod)
     _log(text)
     print(text)
+    shield_level = all_buildings[9][0]
     if energy_flag:
         shield_max_coef = 1
     else:
         shield_max_coef = 0.5
     shield_coef_change = shield_max_coef / shield_level
     damage_to_do = []
+    damage_to_do_sum = 0
     valkyr_needed = []
     valkyr_dead = []
     valkyr_dead_for_test = []
@@ -2478,6 +2605,41 @@ def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag,
         valkyr_dead.append(0)
         valkyr_dead_for_test.append(0)
     shield_lvl_now = shield_level
+    all_defenses = 0
+    for i in range(len(all_buildings)):
+        if i != 9:
+            for bld in all_buildings[i]:
+                if bld > shield_lvl_now:
+                    bld_to = shield_lvl_now
+                else:
+                    bld_to = bld
+                all_defenses += bld_to * default_buildings_defense_list[i][1]
+    for i in range(shield_level):
+        shield_coef = shield_max_coef - shield_coef_change * (shield_level - shield_lvl_now)
+        text = "shield coef: %s\n" % (shield_coef)
+        _log(text)
+        print(text)
+        dmg_to_do = _my_round_threshhold_up(_my_truncate((all_defenses * shield_coef + shield_lvl_now * default_buildings_defense_list[9][1] * shield_max_coef), 6), 0, threshhold)
+        damage_to_do.append(dmg_to_do)
+        damage_to_do_sum += dmg_to_do
+        valkyr_cycle_flat = _my_round_threshhold_up(damage_to_do[i] / (listofships[7][3] * mod[0]), 6, threshhold)
+        valkyr_cycle = valkyr_cycle_flat
+        #if valkyr_cycle_flat > 0 and valkyr_cycle_flat < 1:
+        #    valkyr_cycle = 1
+        #elif valkyr_cycle_flat >= 1:
+        #    if valkyr_cycle_flat % int(valkyr_cycle_flat) == 0:
+        #        valkyr_cycle = int(valkyr_cycle_flat)
+        #    else:
+        #        valkyr_cycle = int(_my_round_up(valkyr_cycle_flat))
+        valkyr_needed.append(valkyr_cycle)
+        valkyr_dead.append(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10] * mod[1]), 6, threshhold))
+        print("damage_to_do[i] %s, valkyr_cycle_flat removed, valkyr_cycle %s, valkyr_dead[i] %s" % (damage_to_do[i], valkyr_cycle, valkyr_dead[i+j])) # , valkyr_cycle_flat
+        shield_lvl_now -= 1
+    
+    valkyr_needed_final = _my_round_threshhold_up(damage_to_do_sum / (listofships[7][3] * mod[0]), 6, threshhold)
+    valkyr_dead_sum = _my_round_threshhold_up(damage_to_do_sum / (listofships[7][10] * mod[1]), 6, threshhold)
+    
+    """
     for i in range(shield_level):
         #shield_coef = shield_coef_30 - (30 - shield_lvl_now) * shield_coef_change
         #shield_coef = _my_round_threshhold_up(shield_max_coef - shield_coef_change * (shield_level - shield_lvl_now), 3, threshhold)
@@ -2496,12 +2658,13 @@ def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag,
                 valkyr_cycle = int(_my_round_up(valkyr_cycle_flat))
         valkyr_needed.append(valkyr_cycle)
         valkyr_dead.append(int(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10] * mod[1]), 0, threshhold)))
+        print("Valkyr_dead[i] %s, damage_to_do[i] %s, listofships[7][10] %s" % (valkyr_dead[i], damage_to_do[i], listofships[7][10]))
         valkyr_dead_for_test.append(int(_my_round_threshhold_up(damage_to_do[i] / (listofships[7][10]), 0, threshhold)))
         valkyr_needed_sum += valkyr_cycle
         valkyr_dead_sum += valkyr_dead[i + j]
         valkyr_dead_for_test_sum += valkyr_dead_for_test[i + j]
         shield_lvl_now -= 1
-    
+    """
     # old way
     #valkyr_needed_final = valkyr_needed_sum + valkyr_dead_from_turrets
     #if valkyr_dead_from_rockets == 0:
@@ -2512,14 +2675,14 @@ def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag,
     #    valkyr_dead_sum += valkyr_dead_from_rockets
     
     # switching to test results
-    valkyr_needed_final = int(_my_round_up(valkyr_dead_sum * listofships[7][10] * mod[1] / (listofships[7][3] * mod[0])))
-    text = "Test Valkyr number with mod defense without turret and rocket lossess for reference: %s" % (valkyr_needed_final)
-    _log(text)
-    print(text)
-    valkyr_needed_final = int(_my_round_up(valkyr_dead_for_test_sum * listofships[7][10] / (listofships[7][3] * mod[0])))
-    text = "Test Final(?) Valkyr number without mod defense without turret and rocket lossess: %s" % (valkyr_needed_final)
-    _log(text)
-    print(text)
+    #valkyr_needed_final = int(_my_round_up((valkyr_dead_sum + 1) * listofships[7][10] * mod[1] / (listofships[7][3] * mod[0])))
+    #text = "Test Valkyr number with mod defense without turret and rocket lossess for reference: %s" % (valkyr_needed_final)
+    #_log(text)
+    #print(text)
+    #valkyr_needed_final = int(_my_round_up((valkyr_dead_for_test_sum + 1) * listofships[7][10] / (listofships[7][3] * mod[0])))
+    #text = "Test Final(?) Valkyr number without mod defense without turret and rocket lossess: %s" % (valkyr_needed_final)
+    #_log(text)
+    #print(text)
     
     if valkyr_dead_from_rockets == 0:
         valkyr_dead_sum += valkyr_dead_passive
@@ -2555,17 +2718,27 @@ def _calc_valkyr_for_shield(all_defenses, shield_level, threshhold, energy_flag,
     _log(text)
     print(text)
     
+    valkyr_needed_final = int(_my_round_threshhold_up(valkyr_needed_final, 0, threshhold))
+    valkyr_dead_sum = int(_my_round_threshhold_up(valkyr_dead_sum, 0, threshhold))
+    for i in range(len(valkyr_needed)):
+        valkyr_needed[i] = int(_my_round_threshhold_up(valkyr_needed[i], 0, threshhold))
+    for i in range(len(valkyr_dead)):
+        valkyr_dead[i] = int(_my_round_threshhold_up(valkyr_dead[i], 0, threshhold))
+    
     return valkyr_needed_final, valkyr_dead_sum, valkyr_needed, valkyr_dead
 
 def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod):
     defense_type_mod = [1, 1, 1, 1, 1]
-    turret_level = all_buildings[8]
-    shield_defenses = all_buildings[9] * default_buildings_defense_list[9][1]
-    turret_defenses = all_buildings[8] * default_buildings_defense_list[8][1]
+    turret_level = 0
+    for i in range(len(all_buildings[8])):
+        turret_level += all_buildings[8][i]
+    shield_defenses = all_buildings[9][0] * default_buildings_defense_list[9][1]
+    turret_defenses = turret_level * default_buildings_defense_list[8][1]
     building_defenses = 0
     for i in range(len(all_buildings)):
         if i != 8 and i != 9:
-            building_defenses += all_buildings[i] * default_buildings_defense_list[i][1]
+            for j in range(len(all_buildings[i])):
+                building_defenses += all_buildings[i][j] * default_buildings_defense_list[i][1]
     text = "List of defenses:\nShield generator %s\nRocket turrets %s\nThe rest of the buildings %s" % (shield_defenses, turret_defenses, building_defenses)
     _log(text)
     print(text)
@@ -2577,7 +2750,7 @@ def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold,
     on_blockade = False
     do_theory = True
     turret_sum_damage = turret_damage * turret_level
-    valkyr_dead_passive = int(_my_round_threshhold_up(turret_sum_damage / (listofships[7][14] * mod[1] * defense_type_mod[4]), 0, threshhold))
+    valkyr_dead_passive = _my_round_threshhold_up(turret_sum_damage / (listofships[7][14] * mod[1] * defense_type_mod[4]), 6, threshhold)
     valkyr_dead_from_rockets_list = _simulate_damage_with_rockets_universal([7], all_rockets, 0, mod, defense_type_mod, on_blockade_attack, on_blockade, do_theory, threshhold)
     valkyr_dead_from_rockets = valkyr_dead_from_rockets_list[0]
     text = "\nShips will die from turrets %s\n and rockets %s\n" % (valkyr_dead_passive, valkyr_dead_from_rockets)
@@ -2585,7 +2758,7 @@ def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold,
     print(text)
     
     valkyr_dead_from_turrets = valkyr_dead_passive
-    if (all_rockets[1][1] != 0 or all_rockets[2][1] != 0 or all_rockets[3][1] != 0) and all_buildings[9] == 0:
+    if (all_rockets[1][1] != 0 or all_rockets[2][1] != 0 or all_rockets[3][1] != 0) and all_buildings[9][0] == 0:
         if do_passive:
             valkyr_dead_from_turrets = valkyr_dead_from_rockets + valkyr_dead_passive
         else:
@@ -2597,12 +2770,11 @@ def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold,
         valkyr_needed_for_turrets_flat = 0
     else:
         if valkyr_needed_for_turrets_flat % int(valkyr_needed_for_turrets_flat) == 0:
-            valkyr_needed_for_turrets = int(valkyr_needed_for_turrets_flat) + valkyr_dead_from_turrets
+            valkyr_needed_for_turrets = int(_my_round_threshhold_down(valkyr_needed_for_turrets_flat + valkyr_dead_from_turrets, 0, threshhold))
         else:
-            valkyr_needed_for_turrets = int(_my_round_up(valkyr_needed_for_turrets_flat)) + valkyr_dead_from_turrets
-    
+            valkyr_needed_for_turrets = int(_my_round_threshhold_down(valkyr_needed_for_turrets_flat + valkyr_dead_from_turrets, 0, threshhold))
     if shield_defenses != 0:
-        valkyr_needed_for_shield, valkyr_dead_from_shield, valkyr_needed_shield_list, valkyr_dead_shield_list = _calc_valkyr_for_shield(building_defenses + turret_defenses, all_buildings[9], threshhold, energy_flag, valkyr_dead_passive, valkyr_dead_from_rockets, mod, do_passive)
+        valkyr_needed_for_shield, valkyr_dead_from_shield, valkyr_needed_shield_list, valkyr_dead_shield_list = _calc_valkyr_for_shield(all_buildings, threshhold, energy_flag, valkyr_dead_passive, valkyr_dead_from_rockets, mod, do_passive)
     else:
         valkyr_needed_for_shield = 0
         valkyr_dead_from_shield = 0
@@ -2631,6 +2803,8 @@ def _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold,
     text = "Valkyr needed for the rest of the buildings flat: %s and result %s" % (valkyr_needed_for_buildings_flat, valkyr_needed_for_buildings)
     _log(text)
     print(text)
+    
+    valkyr_dead_from_turrets = int(_my_round_threshhold_down(valkyr_dead_from_turrets, 0, threshhold))
     
     return [[valkyr_needed_for_shield, valkyr_needed_for_shield * listofships[7][9], valkyr_needed_for_shield * listofships[7][15], valkyr_dead_from_shield, valkyr_dead_from_shield * listofships[7][9], valkyr_dead_from_shield * listofships[7][15]], [valkyr_needed_for_turrets, valkyr_needed_for_turrets * listofships[7][9], valkyr_needed_for_turrets * listofships[7][15], valkyr_dead_from_turrets, valkyr_dead_from_turrets * listofships[7][9], valkyr_dead_from_turrets * listofships[7][15]], [valkyr_needed_for_buildings, valkyr_needed_for_buildings * listofships[7][9], valkyr_needed_for_buildings * listofships[7][15], 0, 0, 0]], valkyr_needed_shield_list, valkyr_dead_shield_list 
 
@@ -2907,7 +3081,7 @@ def _deal_damage_with_rockets_universal(ship, rocket, module, defense_type_mod, 
     text = "%s %s left, %s %s left\n" % (ship_left, listofships[ship[0]][0], rocket_left, listofrockets[rocket[0]][0])
     _log(text)
     print(text)
-    theory_dead = int(_my_round_threshhold_up(rocket_total_damage / single_ship_health, 0, threshhold))
+    theory_dead = _my_round_threshhold_up(rocket_total_damage / single_ship_health, 6, threshhold)
     return ship_left, rocket_left, theory_dead
 
 def _battle_logic_damage_with_rockets_universal(team1, r_id, all_rockets, module, defense_type_mod, state_att_def, threshhold):
@@ -3025,6 +3199,9 @@ def _simulate_damage_with_rockets_universal(team1, all_rockets, turret_sum_damag
     if do_theory:
         # if do_theory then in team1 there will be only ship ids without quantity
         #       and in all_rockets there could be Cobra, Avrora and X-Ray
+        text = "\nSimulating theoretical Damage with Rockets Universal"
+        _log(text)
+        print(text)
         theory_dead_list_summary = []
         theory_dead_list_per_rocket_type = []
         all_rockets_len = len(all_rockets)
@@ -3041,7 +3218,9 @@ def _simulate_damage_with_rockets_universal(team1, all_rockets, turret_sum_damag
             for i in range(len(theory_dead_list_per_rocket_type)):
                 summ += theory_dead_list_per_rocket_type[i][j]
             theory_dead_list_summary.append(summ)
-        
+        text = "Theoretical possible cassualties from rockets for ship ids %s:\n%s" % (team1, theory_dead_list_summary)
+        _log(text)
+        print(text)
         return theory_dead_list_summary
     text = "\nSimulate Damage with Rockets Universal"
     _log(text)
