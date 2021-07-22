@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.05a
+#version 1.06
 
 import PySimpleGUI as sg
 import os.path
@@ -161,7 +161,8 @@ thold_per = 0.125
 thold_max = 1.5
 thold_max_bonus = 50
 threshhold = 0.5
-global_defaults = [0.125, 50]
+simplified = True
+global_defaults = [0.125, 50, True]
 logs = []
 
 #-------------------------------------------------------------------------------------------------------------------
@@ -685,6 +686,7 @@ def _load_default_options_rockets(window):
 def _load_default_options_globals(window):
     window['globals_0'].update(value = global_defaults[0])
     window['globals_1'].update(value = global_defaults[1])
+    window['globals_2'].update(value = global_defaults[2])
 
 def _load_globals_from_file():
     filename = "globals.txt"
@@ -697,7 +699,7 @@ def _load_globals_from_file():
         print(text)
         
         try:
-            if len(lines) != 2:
+            if len(lines) != 3:
                 raise ValueError
         except ValueError:
             title = 'Ошибка загрузки файла'
@@ -707,13 +709,13 @@ def _load_globals_from_file():
             return global_defaults
     else:
         try:
-            text = "_load_ships_from_file: file not found"
+            text = "_load_globals_from_file: file not found"
             _log(text)
             print(text)
             raise ValueError
         except ValueError:
             title = 'Ошибка загрузки файла'
-            text = 'Возникла ошибка при загрузке пользовательских глобальных переменных из файла.\nВозможно файл был изменён некорректным образом.\nБудут использованы значения по умолчанию.'
+            text = 'Файл globals.txt не найден.\nБудут использованы значения по умолчанию.\nНовый файл будет создан с этими значениями.'
             _error_popup_value_error(title, text)
             _save_globals_to_file(global_defaults)
             return global_defaults
@@ -723,7 +725,10 @@ def _load_globals_from_file():
     try:
         a = float(file_globals[0])
         b = int(file_globals[1])
+        c = file_globals[2]
         if a <= 0 or b < 0:
+            raise ValueError
+        if c not in ['True', 'False']:
             raise ValueError
     except ValueError:
         title = 'Ошибка загрузки файла'
@@ -788,7 +793,7 @@ def _error_popup_value_error(title, text):
 
 def _my_popup_about():
     title = 'О программе'
-    text = 'version 1.05a\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
+    text = 'version 1.06\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n'
     text += 'Minter Mxe548ae76175bec07bca65010da7c7999db585cd2\n' + 'Long Coin 16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n' + 'Near validol.near'
     text += '\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714'
     layout = [[sg.Multiline(default_text = text, disabled = True, size = (45, 22))], [sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -825,30 +830,37 @@ def _global_settings_popup():
     global thold_per
     global thold_max
     global thold_max_bonus
+    global simplified
     row_1 = [[sg.Input(default_text = 'Коэф. преимущества', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = str(thold_per), size = (10, 1), enable_events = False, justification = 'right', key = 'globals_0')]]
     row_2 = [[sg.Input(default_text = 'Макс бонус преимущества', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = str(thold_max_bonus), size = (10, 1), enable_events = False, justification = 'right', key = 'globals_1')]]
-    row_3 = [[sg.Input(default_text = 'Пусто', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = '0', size = (10, 1), readonly = True, enable_events = False, justification = 'right', key = 'globals_2')]]
+    row_3 = [[sg.Input(default_text = 'Упрощённый вид', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Checkbox(text = '', default = simplified, enable_events = False, key = 'globals_2')]]
     row_4 = [[sg.Input(default_text = 'Пусто', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = '0', size = (10, 1), readonly = True, enable_events = False, justification = 'right', key = 'globals_3')]]
     row_5 = [[sg.Input(default_text = 'Пусто', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = '0', size = (10, 1), readonly = True, enable_events = False, justification = 'right', key = 'globals_4')]]
     row_6 = [[sg.Input(default_text = 'Пусто', size = (24, 1), readonly = True, enable_events = False, justification = 'left'), sg.Input(default_text = '0', size = (10, 1), readonly = True, enable_events = False, justification = 'right', key = 'globals_5')]]
     row_9 = [[sg.Button('Сохранить и закрыть'), sg.Button('Закрыть без сохранения'), sg.Button('Сбросить на дефолтные')]]
     layout = row_1 + row_2 + row_3 + row_4 + row_5 + row_6 + row_9
     window = sg.Window('Глобальные параметры', layout, size = (500, 200), modal = True, resizable = True, icon = galaxy_icon)
+    new_layout = False
     while True:
         event, values = window.read()
         if event == "Сохранить и закрыть":
             if _check_is_a_positive_float(values['globals_0']):
-                thold_per = float(values['globals_0'])
                 if _check_is_a_positive_number_global(values['globals_1']):
+                    thold_per = float(values['globals_0'])
                     thold_max_bonus = int(values['globals_1'])
                     thold_max = float(1 + thold_max_bonus / 100)
-                    _save_globals_to_file([thold_per, thold_max_bonus])
+                    previous = simplified
+                    simplified = values['globals_2']
+                    if previous != simplified:
+                        new_layout = True
+                    _save_globals_to_file([thold_per, thold_max_bonus, simplified])
                     break
         elif event in ('Закрыть без сохранения', sg.WIN_CLOSED):
             break
         elif event == 'Сбросить на дефолтные':
             _load_default_options_globals(window)
     window.close()
+    return new_layout
 
 # Окно с параметрами кораблей
 def _options_popup():
@@ -1170,9 +1182,9 @@ def _tab4_layout():
     header_2 = [[sg.Text(' ' * 0 + 'Ракеты на планете:')]]
     header_2_b = [[sg.Text(' ' * 0 + 'Усиления Валькирий:')]]
     header_3 = [[sg.Text(' ' * 55 + 'Примерный флот Валькирий')]]
-    header_3_1 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Генератор щита', readonly = True, size = (19, 1))]]
-    header_3_2 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Ракетные башни', readonly = True, size = (19, 1))]]
-    header_3_3 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Остальные здания', readonly = True, size = (19, 1))]]
+    header_3_1 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Генератор щита', justification = 'center', readonly = True, size = (19, 1))]]
+    header_3_2 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Ракетные башни', justification = 'center', readonly = True, size = (19, 1))]]
+    header_3_3 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Остальные здания', justification = 'center', readonly = True, size = (19, 1))]]
     header_4 = [[sg.Text(' ' * 10 + 'Валькирий на один уровень щита:')]]
     headings_1 = ['Валькирий', 'Стоимость флота', 'Время строительства', 'Потери', 'Стоимость потерь', 'Время строит. потерь']
     headings_2 = ['Валькирий', 'Стоимость флота', 'Время строительства', 'Потери', 'Стоимость потерь', 'Время строит. потерь']
@@ -1186,7 +1198,7 @@ def _tab4_layout():
     my_yseparator_col = sg.Column(my_yseparator)
     
     sub_column_part_1 = header_1 + [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (19, 1)), sg.Combo(default_planet_names , readonly = True, key = 't4_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (19, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't4_planet_mines', default_value = '3 шахты')]]
-    sub_column_part_2 = [[sg.Input(default_text = 'Здание', readonly = True, size = (19, 1)), sg.Input(default_text = 'Суммарный уровень', readonly = True, size = (18, 1))]]
+    sub_column_part_2 = [[sg.Input(default_text = 'Здание', readonly = True, size = (19, 1)), sg.Input(default_text = 'Уровни', justification = 'right', readonly = True, size = (18, 1))]]
     sub_column_part_3 = [[sg.Input(default_text = default_buildings_defense_list[i][0], readonly = True, size = (19, 1)), sg.Input(default_text = '0', key = 't4_buildings_' + str(i), size = (18, 1), justification = 'right')] for i in range(len(default_buildings_defense_list))]
     
     sub_column_part_4 = header_2 + [[sg.Input(default_text = listofrockets[i][0], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4_rockets_' + str(i), size = (10, 1), justification = 'right')] for i in range(1, 4)]
@@ -1223,15 +1235,228 @@ def _tab4_layout():
     tab4_column = [[tab4_column_1, tab4_column_2, sg.VSeperator(), tab4_column_3]] + [[tab4_column_4]]
     tab4_layout = [[sg.Column(tab4_column, scrollable = True, expand_x = True, expand_y = True)]]
     return tab4_layout
+
+def _tab1_layout_simplified():
+    headings_1 = ['Корабль', 'Количество']
+    headings_2 = ['Корабль', 'Выжило', 'Потеряно', 'Прочее']
+    headings_ship_names = ['Джавелин', 'Хорнет', 'Раптор', 'Экскалибр', 'Аббадон', 'Локи', 'Геркулес', 'Валькирия', 'Титан']
+    headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
+    headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
+    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(1, 4)]
+    SYMBOL_RIGHT = '►'
+    SYMBOL_LEFT =  '◄'
     
+    t1c1_header =  [[sg.Text(' '*14)] + [sg.Text('Ваш флот')]]
+    t1c2_header =  [[sg.Text(' '*14)] + [sg.Text('Вражеский флот')]]
+    t1c1_att = [[sg.Text('Флот в атаке?')]]
+    t1c2_att = [[sg.Text('Флот в атаке?')]]
+    t1c1_att_drop = [[sg.Combo(['В атаке', 'В защите'], readonly = True, key = 't1sc1_att', default_value = 'В атаке')]]
+    t1c2_att_drop = [[sg.Combo(['В атаке', 'В защите'], readonly = True, key = 't1sc2_att', default_value = 'В защите')]]
+    t1c3_header_1 = [[sg.Text(' '*25)] + [sg.Text('Ваш флот')]]
+    t1c3_header_2 = [[sg.Text(' '*25)] + [sg.Text('Вражеский флот')]]
+    t1c4_header_1 = [[sg.Text(' '*0)] + [sg.Text('Ваш модуль +% (например, 25)')]]
+    t1c4_header_2 = [[sg.Text(' '*0)] + [sg.Text('Модуль противника +% (например, 25)')]] 
+    t1c5_header = [[sg.Text(' '*10)] + [sg.Text('Турели и ракеты противника')]]
+    
+    # keys кол-во кораблей Флот 1
+    sub_column_1 = t1c1_att + [[sg.Text(headings_1[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
+    sub_column_2 = t1c1_att_drop + [[sg.Text(headings_1[1])]] + [[sg.Input(default_text = '0', size = (12, 1), key = 't1sc11' + str(i), justification = 'right')] for i in range(9)]
+
+    # keys Флот 1 модификаторы
+    sub_column_11 = [[sg.Input(default_text = 'Атака', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = 'Защита', size = (12, 1), readonly = True, enable_events = False)]]
+    sub_column_12 = [[sg.Input(default_text = '0', size = (12, 1), key = 't1sc1m' + str(i), justification = 'right')] for i in range(2)]
+
+    # keys Флот 2 модификаторы
+    sub_column_13 = [[sg.Input(default_text = 'Атака', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = 'Защита', size = (12, 1), readonly = True, enable_events = False)]]
+    sub_column_14 = [[sg.Input(default_text = '0', size = (12, 1), key = 't1sc1n' + str(i), justification = 'right')] for i in range(2)]
+    
+    # keys кол-во кораблей Флот 2
+    sub_column_3 = t1c2_att + [[sg.Text(headings_1[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
+    sub_column_4 = t1c2_att_drop + [[sg.Text(headings_1[1])]] + [[sg.Input(default_text = '0', size = (12, 1), key = 't1sc12' + str(i), justification = 'right')] for i in range(9)]
+
+    # key Турели и ракеты
+    sub_column_15 = [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (21, 1)), sg.Combo(default_planet_names , readonly = True, key = 't1s_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (21, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't1s_planet_mines', default_value = '3 шахты')]]
+    sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't1sc8_' + str(i))] for i in range(4)]
+
+    # keys потеряно кораблей Флот 1 и их стоимость
+    sub_column_5 = [[sg.Text(headings_2[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
+    sub_column_6_a = [[sg.Text(headings_2[1])]] + [[sg.Input(default_text = '0', size = (14, 1), key = 't1sc51_' + str(i), readonly = True, justification = 'right')] for i in range(9)]
+    sub_column_6 = [[sg.Text(headings_2[2])]] + [[sg.Input(default_text = '0', size = (14, 1), key = 't1sc52_' + str(i), readonly = True, justification = 'right')] for i in range(9)]
+    sub_column_7 = [[sg.Text(headings_2[3])]] + [[sg.Input(default_text = 'Стоимость', size = (14, 1), readonly = True, justification = 'center')], [sg.Input(default_text = '0', size = (14, 1), key = 't1sc220', readonly = True, justification = 'right')], [sg.Input(default_text = 'Ст-ть Потерь', size = (14, 1), readonly = True, justification = 'center')], [sg.Input(default_text = '0', size = (14, 1), key = 't1sc221', readonly = True, justification = 'right')]]
+
+    # keys потеряно кораблей Флот 2 и их стоимость
+    sub_column_8 = [[sg.Text(headings_2[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
+    sub_column_9_a = [[sg.Text(headings_2[1])]] + [[sg.Input(default_text = '0', size = (14, 1), key = 't1sc61_' + str(i), readonly = True, justification = 'right')] for i in range(9)]
+    sub_column_9 = [[sg.Text(headings_2[2])]] + [[sg.Input(default_text = '0', size = (14, 1), key = 't1sc62_' + str(i), readonly = True, justification = 'right')] for i in range(9)]
+    sub_column_10 = [[sg.Text(headings_2[3])]] + [[sg.Input(default_text = 'Стоимость', size = (14, 1), readonly = True, justification = 'center')], [sg.Input(default_text = '0', size = (14, 1), key = 't1sc320', readonly = True, justification = 'right')], [sg.Input(default_text = 'Ст-ть Потерь', size = (14, 1), readonly = True, justification = 'center')], [sg.Input(default_text = '0', size = (14, 1), key = 't1sc321', readonly = True, justification = 'right')]]
+    
+    my_yseparator = [[sg.Text('|')] for i in range(29)]
+    my_hseparator_1 = [[sg.Text('_'*150)]]
+    my_hseparator_2 = [[sg.Text('_'*150)]]
+    my_yseparator_col = sg.Column(my_yseparator)
+
+    t1c1_rows_ship_input = [[sg.Column(sub_column_1), sg.Column(sub_column_2)]]
+    t1c2_rows_ship_input = [[sg.Column(sub_column_3), sg.Column(sub_column_4)]]
+    t1c3_rows_ship_output = [[sg.Column(sub_column_5), sg.Column(sub_column_6_a), sg.Column(sub_column_6)]] #, sg.Column(sub_column_7)]]
+    t1c4_rows_ship_output = [[sg.Column(sub_column_8), sg.Column(sub_column_9_a), sg.Column(sub_column_9)]] #, sg.Column(sub_column_10)]]
+    t1c5_row_module = [[sg.Column(sub_column_11), sg.Column(sub_column_12)]]
+    t1c6_row_module = [[sg.Column(sub_column_13), sg.Column(sub_column_14)]]
+    t1c7_row_turrets = [[sg.Column(sub_column_15)]]
+
+    tab1_column_1 = t1c1_header + t1c1_rows_ship_input
+    tab1_column_2 = t1c4_header_1 + t1c5_row_module + t1c4_header_2 + t1c6_row_module + [[sg.Text(' ')]] + [[sg.Text(' ' * 7), sg.Button('Рассчитать потери')]]
+    tab1_column_3 = t1c2_header + t1c2_rows_ship_input
+    tab1_column_4 = t1c7_row_turrets #t1c5_header + t1c7_row_turrets
+    tab1_column_5 = t1c3_header_1 + t1c3_rows_ship_output
+    tab1_column_6 = t1c3_header_2 + t1c4_rows_ship_output
+    
+    tab_group = [[sg.Button(SYMBOL_RIGHT, pad=(0,0), key='-HIDE TAB 1 SUB-'),sg.pin(sg.Column([[sg.TabGroup([[sg.Tab('Турели и ракеты противника', tab1_column_4)]])]], key = '-TURRET TAB GROUP-', visible = False, metadata = False))]]
+    
+    tab_group_for_out = [[sg.Column([[sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_6)]])]]
+    tab_group_output = [[sg.Button('...', pad=(0,0), key='-HIDE TAB 1 OUT-'),sg.pin(sg.Column([[sg.TabGroup([[sg.Tab('Результаты', tab_group_for_out)]])]], key = '-OUTPUT TAB GROUP-', visible = False, metadata = False))]]
+    
+    tab1_scrollable_column = my_hseparator_1 + [[sg.Column(tab1_column_1), sg.Column(tab1_column_2), sg.Column(tab1_column_3), sg.Column(tab_group)]] + my_hseparator_2 + tab_group_output
+    
+    #tab1_scrollable_column = my_hseparator_1 + [[sg.Column(tab1_column_1), sg.Column(tab1_column_2), sg.Column(tab1_column_3), sg.Column(tab1_column_4)]] + my_hseparator_2 + [[sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_6)]]
+
+    return [[my_yseparator_col, sg.Column(tab1_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]
+
+def _tab2_layout_simplified():
+    headings_1 = ['Корабль', 'Количество']
+    headings_2 = ['Корабль', 'Выжило', 'Потеряно', 'Прочее']
+    headings_ship_names = ['Джавелин', 'Хорнет', 'Раптор', 'Экскалибр', 'Аббадон', 'Локи', 'Геркулес', 'Валькирия', 'Титан']
+    headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
+    headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
+    headings_fleet_1 = ['Корабль', 'Количество', 'Выжило', 'Потеряно', 'Стоимость'] # length 5
+    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(1, 3)]
+    
+    t2c1_header = [[sg.Text(' '*0)] + [sg.Text('Ваш модуль +% (например, 25)')]]
+    t2c2_header_1 = [[sg.Text(' '*8)] + [sg.Text('Вражеский флот')]]
+    t2c2_header_2 = [[sg.Text(' '*0)] + [sg.Text('Модуль противника +% (например, 25)')]]
+    t2c3_header = [[[sg.Text(' '*15)] + [sg.Text('Вариант %s' % (i))]] for i in range(1, 6)]
+    t2c4_header = [[sg.Text(' '*10)] + [sg.Text('Вражеский флот')]]
+    t2c5_header = [[sg.Text(' '*10)] + [sg.Text('Турели и ракеты')]]
+    
+    # keys Флот 1 модификаторы
+    sub_column_1 = [[sg.Input(default_text = 'Атака', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = 'Защита', size = (12, 1), readonly = True, enable_events = False)]]
+    sub_column_2 = [[sg.Input(default_text = '0', size = (12, 1), key = 't2sc1m_' + str(i), justification = 'right')] for i in range(2)]
+
+    # keys Флот 2 модификаторы
+    sub_column_5 = [[sg.Input(default_text = 'Атака', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = 'Защита', size = (12, 1), readonly = True, enable_events = False)]]
+    sub_column_6 = [[sg.Input(default_text = '0', size = (12, 1), key = 't2sc2m_' + str(i), justification = 'right')] for i in range(2)]
+
+    # keys кол-во кораблей Флот 2
+    sub_column_3 = [[sg.Text(headings_1[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
+    sub_column_4 = [[sg.Text(headings_1[1])]] + [[sg.Input(default_text = '0', size = (12, 1), key = 't2sc2_' + str(i), justification = 'right')] for i in range(9)]
+
+    # key Турели и ракеты
+    sub_column_15 = [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (21, 1)), sg.Combo(default_planet_names , readonly = True, key = 't2s_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (21, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't2s_planet_mines', default_value = '3 шахты')]]
+    sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't2sc6_' + str(i))] for i in range(3)]
+
+    sub_column_7 = []
+    for i in range(3):
+        sub_col_1 = [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_fleet_1]
+        sub_col_2 = [[sg.Input(default_text = '0', size = (14, 1), key = 't2sc3' + str(i) + '_' + str(j), readonly = True, justification = 'right')] for j in range(len(headings_fleet_1))]
+        sub_column_7.append(sg.Column(t2c3_header[i] + [[sg.Column(sub_col_1), sg.Column(sub_col_2)]]))
+    
+    # keys потеряно кораблей Флот 2 и их стоимость
+    sub_column_14 = [[sg.Input(default_text = 'Стоимость', size = (14, 1), readonly = True, justification = 'center'), sg.Input(default_text = '0', size = (14, 1), key = 't2sc43_0', readonly = True, justification = 'right')]]
+    
+    my_yseparator = [[sg.Text('|')] for i in range(29)]
+    my_hseparator_1 = [[sg.Text('_'*150)]]
+    my_hseparator_2 = [[sg.Text('_'*150)]]
+    my_yseparator_col = sg.Column(my_yseparator)
+
+    t2c1_row_module = [[sg.Column(sub_column_1), sg.Column(sub_column_2)]]
+    t2c2_row_module = [[sg.Column(sub_column_5), sg.Column(sub_column_6)]]    
+    t2c2_rows_ship_input = [[sg.Column(sub_column_3), sg.Column(sub_column_4)]]
+    t2c5_row_turrets = [[sg.Column(sub_column_15)]]
+    t2c3_rows_ship_output = [sub_column_7]
+    t2c4_rows_ship_output = [[sg.Column(sub_column_14)]]
+    
+    tab2_column_1 = t2c1_header + t2c1_row_module + t2c2_header_2 + t2c2_row_module
+    tab2_column_2 = t2c2_header_1 + t2c2_rows_ship_input
+    tab2_column_3 = t2c5_header + t2c5_row_turrets
+    tab2_column_4 = t2c3_rows_ship_output
+    tab2_column_5 = [[sg.Text(' '*5), sg.Button('Найти минимальный флот')]] + t2c4_header + t2c4_rows_ship_output
+    
+    
+    tab2_scrollable_column = my_hseparator_1 + [[sg.Column(tab2_column_1), sg.VSeperator(), sg.Column(tab2_column_2), sg.Column(tab2_column_3)]] + my_hseparator_2 + [[sg.Column(tab2_column_4), sg.VSeperator(), sg.Column(tab2_column_5)]]
+
+    return [[my_yseparator_col, sg.Column(tab2_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]
+
+def _tab4_layout_simplified():
+    header_1 = [[sg.Text(' ' * 29 + 'Планета')]]
+    header_2 = [[sg.Text(' ' * 0 + 'Ракеты на планете:')]]
+    header_2_b = [[sg.Text(' ' * 0 + 'Модуль +% (например, 25):')]]
+    header_3 = [[sg.Text(' ' * 15 + 'Примерный флот Валькирий')]]
+    header_3_1 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Генератор щита', justification = 'center', readonly = True, size = (19, 1))]]
+    header_3_2 = [[sg.Input(default_text = 'Цель:', readonly = True, size = (19, 1), justification = 'center'), sg.Input(default_text = 'Ракетные башни', justification = 'center', readonly = True, size = (19, 1))]]
+    headings_1 = ['Валькирий нужно', 'Потери']
+    headings_2 = ['Валькирий нужно', 'Потери']
+    headings_4 = ['Бонус к атаке', 'Бонус к защите']
+    
+    my_yseparator = [[sg.Text('|')] for i in range(29)]
+    my_hseparator_1 = [[sg.Text('_'*150)]]
+    my_hseparator_2 = [[sg.Text('_'*200)]]
+    my_yseparator_col = sg.Column(my_yseparator)
+    
+    sub_column_part_1 = header_1 + [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (19, 1)), sg.Combo(default_planet_names , readonly = True, key = 't4s_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (19, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't4s_planet_mines', default_value = '3 шахты')]]
+    sub_column_part_2 = [[sg.Input(default_text = 'Здание', readonly = True, size = (19, 1)), sg.Input(default_text = 'Уровни', justification = 'right', readonly = True, size = (18, 1))]]
+    sub_column_part_3 = [[sg.Input(default_text = default_buildings_defense_list[i][0], readonly = True, size = (19, 1)), sg.Input(default_text = '0', key = 't4s_buildings_' + str(i), size = (18, 1), justification = 'right')] for i in range(len(default_buildings_defense_list))]
+    
+    sub_column_part_4 = header_2 + [[sg.Input(default_text = listofrockets[i][0], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4s_rockets_' + str(i), size = (10, 1), justification = 'right')] for i in range(1, 4)]
+    
+    sub_column_part_4_b = header_2_b + [[sg.Input(default_text = headings_4[i], readonly = True, size = (14, 1)), sg.Input(default_text = '0', key = 't4s_buffs_' + str(i), size = (10, 1), justification = 'right')] for i in range(2)]
+    
+    sub_column_part_5_1 = header_3_1 + [[sg.Input(default_text = headings_1[i], readonly = True, size = (19, 1)), sg.Input(default_text = '0', readonly = True, size = (19, 1), key = 't4s_out_1_' + str(i), justification = 'right')] for i in range(0, len(headings_1))]
+    
+    sub_column_part_5_2 = header_3_2 + [[sg.Input(default_text = headings_2[i], readonly = True, size = (19, 1)), sg.Input(default_text = '0', readonly = True, size = (19, 1), key = 't4s_out_2_' + str(i), justification = 'right')] for i in range(0, len(headings_2))]
+    
+    tab4_pre_column_1 = sub_column_part_1 + sub_column_part_2 + sub_column_part_3
+    tab4_pre_column_2 = sub_column_part_4
+    tab4_pre_column_2_b = sub_column_part_4_b
+    tab4_pre_column_3_a = [[sg.Column(sub_column_part_5_1)], [sg.Column(sub_column_part_5_2)]]
+    tab4_pre_column_3_b = [[sg.Column(tab4_pre_column_3_a)]]
+    tab4_pre_column_3 = header_3 + tab4_pre_column_3_b + [[sg.Button('Рассчитать')]] + [[sg.Button('Особенности расчёта')]]
+    tab4_column_1 = sg.Column(tab4_pre_column_1)
+    tab4_column_2 = sg.Column(tab4_pre_column_2 + tab4_pre_column_2_b)
+    tab4_column_3 = sg.Column(tab4_pre_column_3)
+    tab4_column = [[tab4_column_1, tab4_column_2, sg.VSeperator(), tab4_column_3]]
+    tab4_layout = [[sg.Column(tab4_column, scrollable = True, expand_x = True, expand_y = True)]]
+    return tab4_layout
+
+def _create_main_layout(simplified):
+    menu_def = [['&File', 'E&xit'], ['Se&ttings', ['Ships', 'Rockets', 'Globals']], ['&Help', ['Description', 'About...']]]
+    menu = [[sg.Menu(menu_def, key='_MENU_')]]
+    
+    if simplified:
+        tab1_layout = _tab1_layout_simplified()
+        tab2_layout = _tab2_layout_simplified()
+        tab4_layout = _tab4_layout_simplified()
+        tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Планетарная бомбардировка', tab4_layout)]])]] #, sg.Tab('Подобрать флот против цели', tab2_layout)]])]]
+    else:
+        tab1_layout = _tab1_layout()
+        tab2_layout = _tab2_layout()
+        tab3_layout = _tab3_layout()
+        tab4_layout = _tab4_layout()
+        tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Найти минимальный флот против цели', tab2_layout), sg.Tab('Найти макс бонус преимущества', tab3_layout), sg.Tab('Планетарная бомбардировка', tab4_layout)]])]]
+
+    layout = menu + tab_group
+    return layout
+
 def _main():
     global listofships
     global listofrockets
     global thold_per
     global thold_max
     global thold_max_bonus
+    global simplified
     
     sg.theme("GreenMono")
+    
+    SYMBOL_RIGHT = '►'
+    SYMBOL_LEFT =  '◄'
     
     to_check_ids_tab_1 = ['t1c1' + str(i) + str(j) for i in range(1, 3) for j in range(0, 9)]
     to_check_ids_tab_1_a = ['t1c1m' + str(i) for i in range(12)] + ['t1c1n' + str(i) for i in range(12)]
@@ -1255,7 +1480,7 @@ def _main():
     text = "to_check_ids_tab_2 list:\n%s" % (to_check_ids_tab_2)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_2_a list:\n%s\nand tab_2_b:\n%s" % (to_check_ids_tab_2_a, to_check_ids_tab_2_b)
+    text = "to_check_ids_tab_2_a list:\n%s\nand tab_2_b:\n%s\nand tab_2_c:\n%s" % (to_check_ids_tab_2_a, to_check_ids_tab_2_b, to_check_ids_tab_2_c)
     _log(text)
     print(text)
     text = "to_check_ids_tab_3 list:\n%s" % (to_check_ids_tab_3)
@@ -1267,8 +1492,30 @@ def _main():
     text = "to_check_ids_tab_4 list:\n%s\n and tab_4_a:\n%s" % (to_check_ids_tab_4, to_check_ids_tab_4_a)
     _log(text)
     print(text)
-    menu_def = [['&File', 'E&xit'], ['Se&ttings', ['Ships', 'Rockets', 'Globals']], ['&Help', ['Description', 'About...']]]
-    menu = [[sg.Menu(menu_def, key='_MENU_')]]
+    
+    to_check_ids_tab_1s = ['t1sc1' + str(i) + str(j) for i in range(1, 3) for j in range(0, 9)]
+    to_check_ids_tab_1s_a = ['t1sc1m' + str(i) for i in range(2)] + ['t1sc1n' + str(i) for i in range(2)]
+    to_check_ids_tab_1s_b = ['t1sc8_' + str(i) for i in range(4)]
+    to_check_ids_tab_2s = ['t2sc2_' + str(i) for i in range(9)]
+    to_check_ids_tab_2s_a = ['t2sc1m_' + str(i) for i in range(2)] + ['t2sc2m_' + str(i) for i in range(2)]
+    to_check_ids_tab_2s_b = ['t2sc6_' + str(i) for i in range(3)]
+    to_check_ids_tab_4s = ['t4s_buildings_' + str(i) for i in range(len(default_buildings_defense_list))]
+    to_check_ids_tab_4s_a = ['t4s_rockets_' + str(i) for i in range(1, 4)] + ['t4s_buffs_' + str(i) for i in range(2)]
+    text = "to_check_ids_tab_1s list:\n%s" % (to_check_ids_tab_1s)
+    _log(text)
+    print(text)
+    text = "to_check_ids_tab_1s_a list:\n%s\nand tab_1s_b:\n%s" % (to_check_ids_tab_1s_a, to_check_ids_tab_1s_b)
+    _log(text)
+    print(text)
+    text = "to_check_ids_tab_2s list:\n%s" % (to_check_ids_tab_2s)
+    _log(text)
+    print(text)
+    text = "to_check_ids_tab_2s_a list:\n%s\nand tab_2s_b:\n%s" % (to_check_ids_tab_2s_a, to_check_ids_tab_2s_b)
+    _log(text)
+    print(text)
+    text = "to_check_ids_tab_4s list:\n%s\n and tab_4s_a:\n%s" % (to_check_ids_tab_4s, to_check_ids_tab_4s_a)
+    _log(text)
+    print(text)
     
     if not os.path.isfile("globals.txt"):
         _my_popup_description_first()
@@ -1288,6 +1535,11 @@ def _main():
     loaded_globals = _load_globals_from_file()
     thold_per = float(loaded_globals[0])
     thold_max_bonus = int(loaded_globals[1])
+    if loaded_globals[2] == 'True' or loaded_globals[2] == True:
+        simplified = True
+    else:
+        simplified = False
+    print("simplified %s and type %s" % (simplified, type(simplified)))
     thold_max = _my_round_threshhold_up(1 + thold_max_bonus / 100, 7, 0.5)
     text = "\nInitialization.\nLoaded ships:\n%s" % (listofships)
     _log(text)
@@ -1296,19 +1548,12 @@ def _main():
     _log(text)
     print(text)
     
-    tab1_layout = _tab1_layout()
-    tab2_layout = _tab2_layout()
-    tab3_layout = _tab3_layout()
-    tab4_layout = _tab4_layout()
-
-    #tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Найти минимальный флот против цели', tab2_layout), sg.Tab('Найти макс бонус преимущества', tab3_layout)]])]]
+    layout = _create_main_layout(simplified)
+    new_layout = False
     
-    tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Найти минимальный флот против цели', tab2_layout), sg.Tab('Найти макс бонус преимущества', tab3_layout), sg.Tab('Планетарная бомбардировка', tab4_layout)]])]]
-
-    layout = menu + tab_group
-
     window = sg.Window("Galaxy Online Калькулятор боёв", layout, size = (1250, 780), resizable = True, keep_on_top = False, element_justification = 'center', grab_anywhere = False, location=(10, 10), icon = galaxy_icon)
     
+    do_once = True
     #test
     #left, dead = _simulate_damage_with_rockets_universal([1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], [[0, 3000],[1, 2000],[2, 1000],[3, 500]], [1.0, 1.0], [1, 1, 1, 1, 1], True, False, 0.5)
     #print("Test left 4 dead: %s and %s" % (left, dead))
@@ -1322,14 +1567,20 @@ def _main():
         elif event == "Rockets":
             _options_rockets_popup()
         elif event == "Globals":
-            _global_settings_popup()
+            new_layout = _global_settings_popup()
         elif event == "Description":
             _my_popup_description()
         elif event == "About...":
             _my_popup_about()
         elif event == "Exit":
             break
-        elif event == "Рассчитать потери":
+        elif event == "-HIDE TAB 1 SUB-":
+            #window['-TURRET TAB GROUP-'].update(visible=window['-TURRET TAB GROUP-'].metadata == True)
+            #window['-TURRET TAB GROUP-'].metadata = not window['-TURRET TAB GROUP-'].metadata
+            #window['-HIDE TAB 1 SUB-'].update(text=SYMBOL_RIGHT if window['-TURRET TAB GROUP-'].metadata else SYMBOL_LEFT)
+            window['-TURRET TAB GROUP-'].update(visible = not window['-TURRET TAB GROUP-'].visible)
+            window['-HIDE TAB 1 SUB-'].update(text=SYMBOL_LEFT if window['-TURRET TAB GROUP-'].visible else SYMBOL_RIGHT)
+        elif event == "Рассчитать потери" and not simplified:
             if _check_is_a_positive_number(values, to_check_ids_tab_1) and _check_is_a_positive_number(values, to_check_ids_tab_1_c):
                 if _check_is_a_number(values, to_check_ids_tab_1_a):
                     team1 = [int(values['t1c11' + str(i)]) for i in range(9)]
@@ -1479,7 +1730,7 @@ def _main():
                         window['t1c323'].update(value = _separator_for_output(dmg_left[1]))
                         window['t1c224'].update(value = _separator_for_output(tab_1_results[0][5]))
                         window['t1c324'].update(value = _separator_for_output(tab_1_results[1][5]))
-        elif event == "Найти минимальный флот":
+        elif event == "Найти минимальный флот" and not simplified:
             if _check_is_a_positive_number(values, to_check_ids_tab_2) and _check_is_a_positive_number(values, to_check_ids_tab_2_c):
                 if _check_is_a_number(values, to_check_ids_tab_2_a):
                     team2 = [int(values['t2c2_' + str(i)]) for i in range(9)]
@@ -1615,8 +1866,7 @@ def _main():
                             text += "    %s    %s\n    %s    lost ships\n%s    lost cost\n%s    build time\n\n" % (_separator_for_output(int(needed_ships[s_id])), listofships[s_id][0], _separator_for_output(int(tab_2_results[s_i][0][0][s_id])), _separator_for_output(int(_my_round_up(tab_2_results[s_i][0][1]))), _separator_for_output(tab_2_results[s_i][0][5]))
                         _log(text)
                         print(text)
-                        
-        elif event == "Рассчитать макс бонус":
+        elif event == "Рассчитать макс бонус" and not simplified:
             if thold_max_bonus == 0:
                 title = "Ошибка макс бонуса"
                 text = "Макс бонус в глобальных переменных был установлен на 0, поиск кораблей для макс бонуса невозможен."
@@ -1731,7 +1981,7 @@ def _main():
                                 text += "%s %s\n%s lost ships cost\n%s\nCost with flyout energy\n%s\n\n" % (int(ships_against[s_id]), listofships[s_id][0], int(tab_3_results[s_i][0][0][s_id]), int(_my_round_up(tab_3_results[s_i][0][1])), int(_my_round_up(tab_3_results[s_i][0][1] + tab_3_results[s_i][0][3] * 0.02)))
                             _log(text)
                             print(text)
-        elif event == 'Рассчитать':
+        elif event == 'Рассчитать' and not simplified:
             flag_check, all_buildings = _check_is_a_valid_building_entry(values, to_check_ids_tab_4)
             if _check_is_a_positive_number(values, to_check_ids_tab_4_a) and flag_check:
                 energy_flag = False # True
@@ -1760,10 +2010,290 @@ def _main():
                     window['t4_out_ss_0_' + str(30 - j)].update(value = _separator_for_output(30 - j))
                     for i in range(1, 3):
                         window['t4_out_ss_' + str(i) + '_' + str(30 - j)].update(value = _separator_for_output(valkyr_out_of[i - 1][j]))
-        elif event == 'Особенности расчёта':
+        elif event == 'Особенности расчёта' and not simplified:
             title = "Особенности расчёта"
             text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nТакже изменён принцип ввода уровней для зданий:\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик.\n\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через разделитель - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2.11*3+10 + 9"
             _error_popup_value_error(title, text)
+
+        elif event == "Рассчитать потери" and simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_1s) and _check_is_a_positive_number(values, to_check_ids_tab_1s_b) and _check_is_a_positive_number(values, to_check_ids_tab_1s_a):
+                team1 = [int(values['t1sc11' + str(i)]) for i in range(9)]
+                orig_var_team1 = [int(values['t1sc11' + str(i)]) for i in range(9)]
+                overall_team1_ships_lost = [0 for i in range(9)]
+                team2 = [int(values['t1sc12' + str(i)]) for i in range(9)]
+                flag_empty_team = False
+                sum_of_ships_1 = 0
+                sum_of_ships_2 = 0
+                for i in range(len(team1)):
+                    sum_of_ships_1 += team1[i]
+                for i in range(len(team2)):
+                    sum_of_ships_2 += team2[i]
+                if sum_of_ships_1 == 0:
+                    flag_empty_team = True
+                if not flag_empty_team:
+                    if values['t1sc1_att'] == 'В атаке':
+                        att_def_1 = True
+                    else:
+                        att_def_1 = False
+                    if values['t1sc2_att'] == 'В атаке':
+                        att_def_2 = True
+                    else:
+                        att_def_2 = False
+                    module1 = [1 + int(values['t1sc1m0']) / 100, 1 + int(values['t1sc1m1']) / 100]
+                    module2 = [1 + int(values['t1sc1n0']) / 100, 1 + int(values['t1sc1n1']) / 100]
+                    damage_type_mod_1 = [1, 1, 1, 1, 1]
+                    damage_type_mod_2 = [1, 1, 1, 1, 1]
+                    defense_type_mod_1 = [1, 1, 1, 1, 1]
+                    defense_type_mod_2 = [1, 1, 1, 1, 1]
+                    accuracy = 80
+                    type_acc_random = True
+                    
+                    # This is the place for turret and rocket calculations
+                    on_blockade = False
+                    on_blockade_attack = True
+                    j = int(values['t1s_planet_type'][1])
+                    k = int(values['t1s_planet_mines'][0])
+                    planetary_coef = default_planetary_coefs[j][k]
+                    turret_damage = 100 * planetary_coef
+                    turret_level = int(values['t1sc8_0'])
+                    all_rockets = []
+                    for i in range(3):
+                        all_rockets.append([i + 1, int(values['t1sc8_' + str(i + 1)])])
+                    text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
+                    _log(text)
+                    print(text)
+                    if not flag_empty_team:
+                        # Rocket damage
+                        # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
+                        # return [ships_left, ships_dead]
+                        turret_sum_damage = turret_damage * turret_level
+                        do_theory = False
+                        rocket_results = _simulate_damage_with_rockets_universal(team1, all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                        team1 = []
+                        for ship in rocket_results[0]:
+                            team1.append(ship)
+                        for i in range(len(rocket_results[1])):
+                            overall_team1_ships_lost[i] += rocket_results[1][i]
+                        text = "\nTeam1 ships destroyed by rockets:\n%s\nTeam1 ships left:\n%s\nTeam1 overall losses:\n%s\n" % (rocket_results[1], team1, overall_team1_ships_lost)
+                        _log(text)
+                        print(text)
+                        sum_of_ships_1 = 0
+                        for i in range(len(team1)):
+                            sum_of_ships_1 += team1[i]
+                        if sum_of_ships_1 == 0:
+                            flag_empty_team = True
+                        else:
+                            flag_empty_team = False
+                        #
+
+                    flag_empty_team2 = False
+                    sum_of_ships_2 = 0
+                    for i in range(len(team2)):
+                        sum_of_ships_2 += team2[i]
+                    if sum_of_ships_2 == 0:
+                        flag_empty_team2 = True
+                    if not flag_empty_team and not flag_empty_team2:
+                        tab_1_results = _simulate_straight(team1, team2, att_def_1, att_def_2, module1, module2, damage_type_mod_1, damage_type_mod_2, defense_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
+                        # return [[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
+                        for i in range(len(tab_1_results[0][0])):
+                            overall_team1_ships_lost[i] += tab_1_results[0][0][i]
+                        tab_1_results[0][0] = overall_team1_ships_lost
+                        tab_1_results[0][1] = _calc_energy_cost(_team_into_id_ship(overall_team1_ships_lost))
+                        tab_1_results[0][3] = _calc_energy_cost(_team_into_id_ship(orig_var_team1))
+                        tab_1_results[0][5] = _calc_build_time(overall_team1_ships_lost)
+                        tab_1_results[0][6] = _calc_build_time(orig_var_team1)
+                        text = "\n\nTeam1:\nStarting\n%s\nEnergy cost\n%s\nDestroyed\n%s\nEnergy cost\n%s + %s = %s\nAlive\n%s\n\nTeam2:\nStarting\n%s\nEnergy cost\n%s\nDestroyed\n%s\nEnergy cost\n%s + %s = %s\nAlive\n%s\n\nTeam1 Damage left\n%s\nTeam2 Damage left\n%s\n\n" % (orig_var_team1, tab_1_results[0][3], tab_1_results[0][0], tab_1_results[0][1], _my_round_threshhold_up(tab_1_results[0][3] * 0.02, 0, 0.5), _my_round_threshhold_up(tab_1_results[0][1] + tab_1_results[0][3] * 0.02, 0, 0.5), tab_1_results[0][2], team2, tab_1_results[1][3], tab_1_results[1][0], tab_1_results[1][1], _my_round_threshhold_up(tab_1_results[1][3] * 0.02, 0, 0.5), _my_round_threshhold_up(tab_1_results[1][1] + tab_1_results[1][3] * 0.02, 0, 0.5), tab_1_results[1][2], tab_1_results[0][4], tab_1_results[1][4])
+                        _log(text)
+                        print(text)
+                    else:
+                        tab_1_results = []
+                        tab_1_results.append([])
+                        tab_1_results[0].append(overall_team1_ships_lost)
+                        tab_1_results[0].append(_calc_energy_cost(_team_into_id_ship(overall_team1_ships_lost)))
+                        tab_1_results[0].append(team1)
+                        tab_1_results[0].append(_calc_energy_cost(_team_into_id_ship(orig_var_team1)))
+                        team1_damage = _calc_damage_by_types_straight(type_acc_random, accuracy, team1, module1, damage_type_mod_1)
+                        tab_1_results[0].append(team1_damage)
+                        tab_1_results[0].append(_calc_build_time(overall_team1_ships_lost))
+                        tab_1_results[0].append(_calc_build_time(orig_var_team1))
+                        tab_1_results[0].append(0)
+                        tab_1_results.append([])
+                        tab_1_results[1].append([0, 0, 0, 0, 0, 0, 0, 0, 0])
+                        tab_1_results[1].append(0)
+                        tab_1_results[1].append(team2)
+                        tab_1_results[1].append(_calc_energy_cost(_team_into_id_ship(team2)))
+                        # _calc_damage_by_types_straight(type_acc_random, accuracy, ships, ships_mod, damage_type_mod)
+                        team2_damage = _calc_damage_by_types_straight(type_acc_random, accuracy, team2, module2, damage_type_mod_2)
+                        tab_1_results[1].append(team2_damage)
+                        tab_1_results[1].append(0)
+                        tab_1_results[1].append(_calc_build_time(team2))
+                    
+                    if do_once:
+                        window['-OUTPUT TAB GROUP-'].update(visible = True)
+                        do_once = False
+                    
+                    for i in range(9):
+                        window['t1sc51_' + str(i)].update(value = _separator_for_output(tab_1_results[0][2][i]))
+                        window['t1sc52_' + str(i)].update(value = _separator_for_output(tab_1_results[0][0][i]))
+                        window['t1sc61_' + str(i)].update(value = _separator_for_output(tab_1_results[1][2][i]))
+                        window['t1sc62_' + str(i)].update(value = _separator_for_output(tab_1_results[1][0][i]))
+                    #window['t1sc220'].update(value = _separator_for_output(tab_1_results[0][3]))
+                    #window['t1sc221'].update(value = _separator_for_output(tab_1_results[0][1]))
+                    #window['t1sc320'].update(value = _separator_for_output(tab_1_results[1][3]))
+                    #window['t1sc321'].update(value = _separator_for_output(tab_1_results[1][1]))
+        elif event == "Найти минимальный флот" and simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_2s) and _check_is_a_positive_number(values, to_check_ids_tab_2s_b) and _check_is_a_positive_number(values, to_check_ids_tab_2s_a):
+                team2 = [int(values['t2sc2_' + str(i)]) for i in range(9)]
+                flag_empty_team = False
+                for i in range(len(team2)):
+                    if team2[i] != 0:
+                        flag_empty_team = False
+                        break
+                    else:
+                        flag_empty_team = True
+                if not flag_empty_team:
+                    att_def_1 = True
+                    att_def_2 = True
+                    module1 = [1 + int(values['t2sc1m_0']) / 100, 1 + int(values['t2sc1m_1']) / 100]
+                    module2 = [1 + int(values['t2sc2m_0']) / 100, 1 + int(values['t2sc2m_1']) / 100]
+                    damage_type_mod_1 = [1, 1, 1, 1, 1]
+                    damage_type_mod_2 = [1, 1, 1, 1, 1]
+                    defense_type_mod_1 = [1, 1, 1, 1, 1]
+                    defense_type_mod_2 = [1, 1, 1, 1, 1]
+                    accuracy = 80
+                    type_acc_random = False
+                    
+                    # This is the place for turret and rocket calculations
+                    on_blockade_attack = True
+                    on_blockade = False
+                    j = int(values['t2s_planet_type'][1])
+                    k = int(values['t2s_planet_mines'][0])
+                    planetary_coef = default_planetary_coefs[j][k]
+                    turret_level = int(values['t2sc6_0'])
+                    turret_sum_damage = 100 * planetary_coef * turret_level
+                    all_rockets = []
+                    for i in range(2):
+                        all_rockets.append([i + 1, int(values['t2sc6_' + str(i + 1)])])
+                    text = "\nPlanetary_coef %s, turret_sum_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_sum_damage, turret_level, all_rockets)
+                    _log(text)
+                    print(text)
+                    # Rocket damage
+                    # _simulate_damage_with_rockets_universal(team1, all_rockets, module1, defense_type_mod_1, on_blockade_state_att_def, on_blockade, do_theory, threshhold)
+                    # return [ships_left, ships_dead]
+                    do_theory = True
+                    to_add_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4], all_rockets, turret_sum_damage, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                    print(to_add_ships_list_raw)
+                    to_add_ships_list = []
+                    for rrr in to_add_ships_list_raw:
+                        to_add_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
+                    text = "\nShips will die from turrets or rockets:\n%s\n" % (to_add_ships_list)
+                    _log(text)
+                    print(text)
+                    
+                    forstatistics = []
+                    needed_ships, damage_left = _calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
+                    # _calc_needed_ships(team2, module1, module2, damage_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy)
+                    #print(needed_ships)
+                    text = "Minimum amount of ships to destroy opponent with %s%% accuracy\n%s" % (accuracy, needed_ships)
+                    print(text)
+                    _log(text)
+                    old_acc = accuracy
+                    accuracy = 100
+                    compositions = _change_found_to_sole(needed_ships)
+                    for comp in compositions:
+                        forstatistics.append(_simulate_straight(comp, team2, att_def_1, att_def_2, module1, module2, damage_type_mod_1, damage_type_mod_2, defense_type_mod_1, defense_type_mod_2, threshhold, type_acc_random, accuracy))
+                    for i in range(5):
+                        forstatistics[i].append(int(damage_left[i]))
+                    
+                    # return [[team1_ships_dead, team1_cost_dead, team1_ships_left, team1_cost, team1_damage_left, _calc_build_time(team1_ships_dead), _calc_build_time(team1), s_id], [team2_ships_dead, team2_cost_dead, team2_ships_left, team2_cost, team2_damage_left, _calc_build_time(team2_ships_dead), _calc_build_time(team2)]]
+                    
+                    print(forstatistics)
+                    for i in range(5):
+                        forstatistics[i][0][0][i] += to_add_ships_list[i]
+                        forstatistics[i][0][1] += to_add_ships_list[i] * listofships[i][9]
+                        forstatistics[i][0][3] += to_add_ships_list[i] * listofships[i][9]
+                        forstatistics[i][0][5] += to_add_ships_list[i] * listofships[i][15]
+                        forstatistics[i][0][6] += to_add_ships_list[i] * listofships[i][15]
+                        needed_ships[i] += to_add_ships_list[i]
+                    
+                    tab_2_results = []
+                    for s_i in range(5):
+                        if len(forstatistics) != 1:
+                            min_cost = forstatistics[0][0][1]
+                            index = 0
+                            for s_j in range(0, len(forstatistics)):
+                                if min_cost > forstatistics[s_j][0][1]:
+                                    min_cost = forstatistics[s_j][0][1]
+                                    index = s_j
+                            tab_2_results.append(forstatistics[index])
+                            forstatistics.pop(index)
+                        else:
+                            tab_2_results.append(forstatistics[0])
+                            forstatistics.clear()
+                    # t2c30_0, t2c30_8, t2c34_0, t2c34_8
+                    # ['Корабль', 'Количество', 'Стоимость', 'Время строит.', 'Выжило', 'Потеряно', 'Стоимость', 'С. с вылетом', 'Время строит.', 'Урона осталось'] # length 10
+                    dmg_left = []
+                    for j in range(5):
+                        dmg = 0
+                        for i in range(5):
+                            dmg += tab_2_results[j][0][4][i][1]
+                        dmg_left.append(int(dmg))
+                    s_ids = []
+                    for s_i in range(0, 5):
+                        s_ids.append(tab_2_results[s_i][0][7])
+                    names_ids = _translate_id_to_name(s_ids)
+                    for i in range(3):
+                        window['t2sc3' + str(i) + '_0'].update(value = names_ids[i])
+                        window['t2sc3' + str(i) + '_1'].update(value = _separator_for_output(needed_ships[s_ids[i]]))
+                        window['t2sc3' + str(i) + '_2'].update(value = _separator_for_output(tab_2_results[i][0][2][s_ids[i]]))
+                        window['t2sc3' + str(i) + '_3'].update(value = _separator_for_output(tab_2_results[i][0][0][s_ids[i]]))
+                        window['t2sc3' + str(i) + '_4'].update(value = _separator_for_output(tab_2_results[i][0][1]))
+                        
+                    window['t2sc43_0'].update(value = _separator_for_output(tab_2_results[0][1][3]))
+                    
+                    add_text = ""
+                    for s_i in range(0, 9):
+                        if team2[s_i] != 0:
+                            add_text += _separator_for_output(team2[s_i]) + " " + listofships[s_i][0] + "\n"
+                    text = "\nSorted list of minimum proposed ship counter in ascending order of lost ships costs:\nN.B.Ship number is for accuracy %s%%, Ships defeated is with accuracy 100%%\nAgainst\n%sCost %s\nBuild time %s\n---------\n\n" % (old_acc, add_text, _separator_for_output(tab_2_results[0][1][3]), _separator_for_output(tab_2_results[0][1][6]))
+                    for s_i in range(0, 5):
+                        s_id = s_ids[s_i]
+                        text += "    %s    %s\n    %s    lost ships\n%s    lost cost\n%s    build time\n\n" % (_separator_for_output(int(needed_ships[s_id])), listofships[s_id][0], _separator_for_output(int(tab_2_results[s_i][0][0][s_id])), _separator_for_output(int(_my_round_up(tab_2_results[s_i][0][1]))), _separator_for_output(tab_2_results[s_i][0][5]))
+                    _log(text)
+                    print(text)
+        elif event == 'Рассчитать' and simplified:
+            flag_check, all_buildings = _check_is_a_valid_building_entry(values, to_check_ids_tab_4s)
+            if _check_is_a_positive_number(values, to_check_ids_tab_4s_a) and flag_check:
+                energy_flag = False # True
+                j = int(values['t4s_planet_type'][1])
+                k = int(values['t4s_planet_mines'][0])
+                planetary_coef = default_planetary_coefs[j][k]
+                turret_damage = 100 * planetary_coef
+                all_rockets = [[0, 0]]
+                for i in range(1, 4):
+                    all_rockets.append([i, int(values['t4s_rockets_' + str(i)])])
+                mod = [1 + _my_truncate(int(values['t4s_buffs_0']) / 100, 5), 1 + _my_truncate(int(values['t4s_buffs_1']) / 100, 5)]
+                text = "Buffs for Valkyr: %s" % (mod)
+                _log(text)
+                print(text)
+                do_passive = True
+                tab_4_results, valkyr_needed_shield_list, valkyr_dead_shield_list = _simulate_bombardment(all_buildings, all_rockets, turret_damage, threshhold, energy_flag, do_passive, mod)
+                valkyr_out_of = [valkyr_needed_shield_list, valkyr_dead_shield_list]
+                for j in range(2):
+                    window['t4s_out_' + str(j + 1) + '_' + str(0)].update(value = _separator_for_output(tab_4_results[j][0]))
+                    window['t4s_out_' + str(j + 1) + '_' + str(1)].update(value = _separator_for_output(tab_4_results[j][3]))
+        elif event == 'Особенности расчёта' and simplified:
+            title = "Особенности расчёта"
+            text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nВ колонке Уровни просто перечислите уровни здания через запятую.\n\nПримеры:\n\n 20\n 14, 13, 11\n 20*5\n\n 20*5 - это 5 зданий 20го уровня.\n\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик."
+            _error_popup_value_error(title, text)
+        if new_layout:
+            window.close()
+            del layout
+            del window
+            layout = _create_main_layout(simplified)
+            window = sg.Window("Galaxy Online Калькулятор боёв", layout, size = (1250, 780), resizable = True, keep_on_top = False, element_justification = 'center', grab_anywhere = False, location=(10, 10), icon = galaxy_icon)
+            new_layout = False
+            do_once = True
     window.close()
 
 #-------------------------------------------------------------------------------------------------------------------
