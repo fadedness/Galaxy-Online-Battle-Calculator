@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.07
+#version 1.07a
 
 import PySimpleGUI as sg
 import os.path
@@ -457,6 +457,9 @@ def _check_ships_before_saving(ships):
 
 def _check_is_a_positive_number(values_list, to_check):
     for elem in to_check:
+        if len(values[elem]) == 0:
+            values[elem] = '0'
+        values[elem] = values[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
             if a < 0:
@@ -517,6 +520,9 @@ def _check_is_a_valid_building_entry(values_list, to_check):
 
 def _check_is_a_number(values_list, to_check):
     for elem in to_check:
+        if len(values[elem]) == 0:
+            values[elem] = '0'
+        values[elem] = values[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
         except ValueError:
@@ -528,6 +534,9 @@ def _check_is_a_number(values_list, to_check):
 
 def _check_is_a_number_in_range(values_list, to_check, min_, max_):
     for elem in to_check:
+        if len(values[elem]) == 0:
+            values[elem] = '0'
+        values[elem] = values[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
             if a < min_ or a > max_:
@@ -862,7 +871,7 @@ def _error_popup_value_error(title, text):
 def _my_popup_about():
     font_t = font_regular
     title = 'О программе'
-    text = 'version 1.07\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
+    text = 'version 1.07a\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
     text += 'Minter\nMxe548ae76175bec07bca65010da7c7999db585cd2\n\n' + 'Long Coin\n16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n\n' + 'Near\nvalidol.near'
     text += '\n\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714 - галактика Minter.'
     layout = [[sg.Multiline(default_text = text, font = font_t, disabled = True, size = (400, 22))], [sg.Text(' ' * 65), sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -906,7 +915,7 @@ def _GUI_settings_popup():
     percent_add = settings[2]
     row_1 = [[sg.Text('Упрощённый вид: включить/выключить', font = font_t, size = (55, 1), enable_events = False, justification = 'left'), sg.Checkbox(text = '', default = simplified, enable_events = False, key = 'settings_0')]]
     row_2 = [[sg.Text("Упрощённый вид: Дуров, верни input'ы!", font = font_t, size = (55, 1), enable_events = False, justification = 'left'), sg.Checkbox(text = '', default = input_view, enable_events = False, key = 'settings_1')]]
-    row_3 = [[sg.Text('Стандартный вид: добавить вывод в процентах', font = font_t, size = (55, 1), enable_events = False, justification = 'left'), sg.Checkbox(text = '', default = percent_add, enable_events = False, key = 'settings_2')]]
+    row_3 = [[sg.Text('Добавить вывод в процентах для потерь и выживших', font = font_t, size = (55, 1), enable_events = False, justification = 'left'), sg.Checkbox(text = '', default = percent_add, enable_events = False, key = 'settings_2')]]
     row_4 = [[sg.Text('', font = font_t, size = (55, 1), enable_events = False, justification = 'left')]]#, sg.Checkbox(text = '', default = False, enable_events = False, key = 'settings_3')]]
     row_5 = [[sg.Text('', font = font_t, size = (55, 1), enable_events = False, justification = 'left')]]#, sg.Checkbox(text = '', default = False, enable_events = False, key = 'settings_4')]]
     row_6 = [[sg.Text('', font = font_t, size = (55, 1), enable_events = False, justification = 'left')]]#, sg.Checkbox(text = '', default = False, enable_events = False, key = 'settings_5')]]
@@ -1641,6 +1650,7 @@ def _main():
     global thold_max
     global thold_max_bonus
     global settings
+    global values
     
     sg.theme("GreenMono")
     
@@ -2291,6 +2301,7 @@ def _main():
 
         elif event == "Рассчитать потери" and simplified:
             if _check_is_a_positive_number(values, to_check_ids_tab_1s) and _check_is_a_positive_number(values, to_check_ids_tab_1s_b) and _check_is_a_positive_number(values, to_check_ids_tab_1s_a):
+                do_percent = settings[2]
                 team1 = [int(values['t1sc11' + str(i)]) for i in range(9)]
                 orig_var_team1 = [int(values['t1sc11' + str(i)]) for i in range(9)]
                 overall_team1_ships_lost = [0 for i in range(9)]
@@ -2407,16 +2418,45 @@ def _main():
                         do_once = False
                     
                     for i in range(9):
-                        window['t1sc51_' + str(i)].update(value = _separator_for_output(tab_1_results[0][2][i]))
-                        window['t1sc52_' + str(i)].update(value = _separator_for_output(tab_1_results[0][0][i]))
-                        window['t1sc61_' + str(i)].update(value = _separator_for_output(tab_1_results[1][2][i]))
-                        window['t1sc62_' + str(i)].update(value = _separator_for_output(tab_1_results[1][0][i]))
+                        if do_percent:
+                            b = orig_var_team1[i]
+                            if b != 0:
+                                a = tab_1_results[0][2][i]
+                                aa = _separator_for_output(tab_1_results[0][0][i])
+                                c, d =_calc_percent_for_output(a, b, 0)
+                                a = _separator_for_output(a)
+                                c = _separator_for_output(c)
+                                d = _separator_for_output(d)
+                                window['t1sc51_' + str(i)].update(value = a + ' (' + c + '%)')
+                                window['t1sc52_' + str(i)].update(value = aa + ' (' + d + '%)')
+                            else:
+                                window['t1sc51_' + str(i)].update(value = '0')
+                                window['t1sc52_' + str(i)].update(value = '0')
+                            b = team2[i]
+                            if b != 0:
+                                a = tab_1_results[1][2][i]
+                                aa = _separator_for_output(tab_1_results[1][0][i])
+                                c, d =_calc_percent_for_output(a, b, 0)
+                                a = _separator_for_output(a)
+                                c = _separator_for_output(c)
+                                d = _separator_for_output(d)
+                                window['t1sc61_' + str(i)].update(value = a + ' (' + c + '%)')
+                                window['t1sc62_' + str(i)].update(value = aa + ' (' + d + '%)')
+                            else:
+                                window['t1sc61_' + str(i)].update(value = '0')
+                                window['t1sc62_' + str(i)].update(value = '0')
+                        else:
+                            window['t1sc51_' + str(i)].update(value = _separator_for_output(tab_1_results[0][2][i]))
+                            window['t1sc52_' + str(i)].update(value = _separator_for_output(tab_1_results[0][0][i]))
+                            window['t1sc61_' + str(i)].update(value = _separator_for_output(tab_1_results[1][2][i]))
+                            window['t1sc62_' + str(i)].update(value = _separator_for_output(tab_1_results[1][0][i]))
                     #window['t1sc220'].update(value = _separator_for_output(tab_1_results[0][3]))
                     #window['t1sc221'].update(value = _separator_for_output(tab_1_results[0][1]))
                     #window['t1sc320'].update(value = _separator_for_output(tab_1_results[1][3]))
                     #window['t1sc321'].update(value = _separator_for_output(tab_1_results[1][1]))
         elif event == "Найти минимальный флот" and simplified:
             if _check_is_a_positive_number(values, to_check_ids_tab_2s) and _check_is_a_positive_number(values, to_check_ids_tab_2s_b) and _check_is_a_positive_number(values, to_check_ids_tab_2s_a):
+                do_percent = settings[2]
                 team2 = [int(values['t2sc2_' + str(i)]) for i in range(9)]
                 flag_empty_team = False
                 for i in range(len(team2)):
@@ -2538,6 +2578,7 @@ def _main():
         elif event == 'Рассчитать' and simplified:
             flag_check, all_buildings = _check_is_a_valid_building_entry(values, to_check_ids_tab_4s)
             if _check_is_a_positive_number(values, to_check_ids_tab_4s_a) and flag_check:
+                do_percent = settings[2]
                 energy_flag = False # True
                 j = int(values['t4s_planet_type'][1])
                 k = int(values['t4s_planet_mines'][0])
@@ -2555,7 +2596,18 @@ def _main():
                 valkyr_out_of = [valkyr_needed_shield_list, valkyr_dead_shield_list]
                 for j in range(2):
                     window['t4s_out_' + str(j + 1) + '_' + str(0)].update(value = _separator_for_output(tab_4_results[j][0]))
-                    window['t4s_out_' + str(j + 1) + '_' + str(1)].update(value = _separator_for_output(tab_4_results[j][3]))
+                    if do_percent:
+                        b = tab_4_results[j][0]
+                        if b != 0:
+                            a = tab_4_results[j][3]
+                            c, d = _calc_percent_for_output(a, b, 0)
+                            a = _separator_for_output(a)
+                            c = _separator_for_output(c)
+                            window['t4s_out_' + str(j + 1) + '_' + str(1)].update(value = a + ' (' + c + '%)')
+                        else:
+                            window['t4s_out_' + str(j + 1) + '_' + str(1)].update(value = '0')
+                    else:
+                        window['t4s_out_' + str(j + 1) + '_' + str(1)].update(value = _separator_for_output(tab_4_results[j][3]))
         elif event == 'Особенности расчёта' and simplified:
             title = "Особенности расчёта"
             text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nВ колонке Уровни просто перечислите уровни здания через запятую.\n\nПримеры:\n\n 20\n 14, 13, 11\n 20*5\n\n 20*5 - это 5 зданий 20го уровня.\n\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик."
