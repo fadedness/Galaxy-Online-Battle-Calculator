@@ -457,9 +457,9 @@ def _check_ships_before_saving(ships):
 
 def _check_is_a_positive_number(values_list, to_check):
     for elem in to_check:
-        if len(values[elem]) == 0:
-            values[elem] = '0'
-        values[elem] = values[elem].replace(" ", "")
+        if len(values_list[elem]) == 0:
+            values_list[elem] = '0'
+        values_list[elem] = values_list[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
             if a < 0:
@@ -520,9 +520,9 @@ def _check_is_a_valid_building_entry(values_list, to_check):
 
 def _check_is_a_number(values_list, to_check):
     for elem in to_check:
-        if len(values[elem]) == 0:
-            values[elem] = '0'
-        values[elem] = values[elem].replace(" ", "")
+        if len(values_list[elem]) == 0:
+            values_list[elem] = '0'
+        values_list[elem] = values_list[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
         except ValueError:
@@ -534,9 +534,9 @@ def _check_is_a_number(values_list, to_check):
 
 def _check_is_a_number_in_range(values_list, to_check, min_, max_):
     for elem in to_check:
-        if len(values[elem]) == 0:
-            values[elem] = '0'
-        values[elem] = values[elem].replace(" ", "")
+        if len(values_list[elem]) == 0:
+            values_list[elem] = '0'
+        values_list[elem] = values_list[elem].replace(" ", "")
         try:
             a = int(values_list[elem])
             if a < min_ or a > max_:
