@@ -30,6 +30,16 @@ wait for installation and enter
 python3 GO_Calculator.py
 ```
 
+## Added GO_Calculator_android.py
+It is not a native application for android.
+
+It is a GUI adaptation to be run on android via Pydroid3 application, that can be found on google play store.
+
+## Добавлен файл GO_Calculator_android.py
+Это не приложение на андроид.
+
+Это адаптация интерфейса для запуска на андроиде через приложение Pydroid3, которое можно найти в google play store.
+
 ## Установка и запуск скрипта на Windows
 Устанавливаем Python 3 с python org, при установке проверяем, что в "Optional Features" стоит галочка напротив "td/tk and IDLE".
 В командной строке пишем
