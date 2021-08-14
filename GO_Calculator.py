@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.07a
+#version 1.08
 
 import PySimpleGUI as sg
 import os.path
@@ -27,7 +27,7 @@ img_donut = _img_donut()
 # Classes are not used, left for visual reference only
 
 class Ship(object):
-    def __init__(self, name, ship_id, damage_type_id, attack, defense, weight_in_question, priority_att, priority_def, speed, price, defense_laser, defense_kinetic, defense_plasma, defense_rocket, defense_rail, build_time = 0):
+    def __init__(self, name, ship_id, damage_type_id, attack, defense, weight_in_question, priority_att, priority_def, speed, price, defense_laser, defense_kinetic, defense_plasma, defense_rocket, defense_rail, build_time, cargo_hold):
         self.name = name                                        #    0
         self.ship_id = ship_id                                  #    1
         self.damage_type_id = damage_type_id                    #    2
@@ -44,6 +44,7 @@ class Ship(object):
         self.defense_rocket = defense_rocket                    #   13
         self.defense_rail = defense_rail                        #   14
         self.build_time = build_time                            #   15
+        self.cargo_hold = cargo_hold                            #   16
 
 #--------------------------------------------------------------------------------------
 # old Beta
@@ -62,15 +63,15 @@ default_ship_list = [
 """
 # released stats
 default_ship_list = [
-    ['Джавелин', 0, 2, 45, 55, 2, 1000, 3000, 8, 500, 33, 44, 55, 66, 77, 264],
-    ['Хорнет', 1, 0, 110, 90, 4, 1000, 3000, 7, 1000, 90, 54, 126, 72, 108, 528],
-    ['Раптор', 2, 1, 150, 150, 6, 1000, 3000, 6, 1500, 210, 150, 180, 90, 120, 720],
-    ['Экскалибр', 3, 3, 225, 275, 10, 1000, 3000, 5, 2750, 330, 385, 220, 275, 165, 1200],
-    ['Аббадон', 4, 4, 440, 360, 16, 1000, 3000, 4, 4400, 288, 432, 216, 504, 360, 1920],
-    ['Локи', 5, 1, 20, 20, 1, 250, 100, 10, 400, 24, 20, 22, 16, 18, 120],
-    ['Геркулес', 6, 0, 25, 275, 10, 250, 250, 5, 400, 275, 220, 330, 248, 303, 300],
-    ['Валькирия', 7, 3, 50, 100, 8, 5000, 250, 3, 5000, 110, 120, 90, 100, 80, 2400],
-    ['Титан', 8, 4, 200, 900, 100, 100, 100, 3, 32000, 810, 990, 720, 1080, 900, 5400]
+    ['Джавелин', 0, 2, 45, 55, 2, 1000, 3000, 8, 500, 33, 44, 55, 66, 77, 264, 20],
+    ['Хорнет', 1, 0, 110, 90, 4, 1000, 3000, 7, 1000, 90, 54, 126, 72, 108, 528, 10],
+    ['Раптор', 2, 1, 150, 150, 6, 1000, 3000, 6, 1500, 210, 150, 180, 90, 120, 720, 20],
+    ['Экскалибр', 3, 3, 225, 275, 10, 1000, 3000, 5, 2750, 330, 385, 220, 275, 165, 1200, 10],
+    ['Аббадон', 4, 4, 440, 360, 16, 1000, 3000, 4, 4400, 288, 432, 216, 504, 360, 1920, 10],
+    ['Локи', 5, 1, 20, 20, 1, 250, 100, 10, 400, 24, 20, 22, 16, 18, 120, 0],
+    ['Геркулес', 6, 0, 25, 275, 10, 250, 250, 5, 400, 275, 220, 330, 248, 303, 300, 100],
+    ['Валькирия', 7, 3, 50, 100, 8, 5000, 250, 3, 5000, 110, 120, 90, 100, 80, 2400, 10],
+    ['Титан', 8, 4, 200, 900, 100, 100, 100, 3, 32000, 810, 990, 720, 1080, 900, 5400, 0]
 ]
 
 default_damage_names_id = [
@@ -119,6 +120,18 @@ default_planet_names = [
     'T5 Кладиум',
     'T6 Неодиум',
     'T7 Минтериум'
+]
+
+default_resource_names = [
+    'Ториум',
+    'Ванадиум',
+    'Отариум',
+    'Хромиум',
+    'Кладиум',
+    'Неодиум',
+    'Минтериум',
+    'Соляриум',
+    'Энергия',
 ]
 
 default_mines_quantity = [
@@ -250,7 +263,7 @@ def _load_ships_from_file():
             if len(ships) != 9:
                 raise ValueError
             for j in range(len(ships)):
-                if len(ships[j]) != 16:
+                if len(ships[j]) != 17:
                     raise ValueError
         except ValueError:
             title = 'Ошибка загрузки файла кораблей'
@@ -295,7 +308,7 @@ def _save_ships_to_file(ships):
     with open(filename, "w") as f:
         for j in range(9):
             line = ''
-            for i in range(2, 16):
+            for i in range(2, 17):
                 line += str(ships[j][i]) + ' '
             line += '0\n'
             lines.append(line)
@@ -443,7 +456,7 @@ def _check_ships_before_saving(ships):
         if len(ships) != 9:
             raise ValueError
         for j in range(len(ships)):
-            if len(ships[j]) != 16:
+            if len(ships[j]) != 17:
                 raise ValueError
             for i in [3, 4, 6, 7, 10, 11, 12, 13, 14]:
                 if ships[j][i] == 0:
@@ -691,7 +704,7 @@ def _load_default_options_ships(window):
     for j in range(9):
         damage_type_default = damage_names[default_ship_list[j][2]]
         window['ship_' + str(j) + '2'].update(value = damage_type_default)
-        for i in range(3, 16):
+        for i in range(3, 17):
             window['ship_' + str(j) + str(i)].update(value = default_ship_list[j][i])
 
 def _load_default_options_rockets(window):
@@ -871,7 +884,7 @@ def _error_popup_value_error(title, text):
 def _my_popup_about():
     font_t = font_regular
     title = 'О программе'
-    text = 'version 1.07a\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
+    text = 'version 1.08\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
     text += 'Minter\nMxe548ae76175bec07bca65010da7c7999db585cd2\n\n' + 'Long Coin\n16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n\n' + 'Near\nvalidol.near'
     text += '\n\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714 - галактика Minter.'
     layout = [[sg.Multiline(default_text = text, font = font_t, disabled = True, size = (400, 22))], [sg.Text(' ' * 65), sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
@@ -980,14 +993,14 @@ def _global_settings_popup():
 
 # Окно с параметрами кораблей
 def _options_ships_popup():
-    options_header_1 = ['Название', 'Идентификатор', 'Тип урона', 'Атака', 'Защита', 'Вес', 'Приоритет в атаке', 'Приоритет в защите', 'Скорость', 'Цена', 'Защита от лазера', 'Защита от кинетики', 'Защита от плазмы', 'Защита от ракет', 'Защита от рельсы', 'Время строительства']
+    options_header_1 = ['Название', 'Идентификатор', 'Тип урона', 'Атака', 'Защита', 'Вес', 'Приоритет в атаке', 'Приоритет в защите', 'Скорость', 'Цена', 'Защита от лазера', 'Защита от кинетики', 'Защита от плазмы', 'Защита от ракет', 'Защита от рельсы', 'Время строительства', 'Место в трюме']
     options_ship_names = default_ships_names
     options_damage_names = default_damage_names_id
     ships = listofships
     #['Джавелин', 'Хорнет', 'Раптор', 'Экскалибр', 'Аббадон', 'Локи', 'Геркулес', 'Валькирия', 'Титан']
-    ship_rows = [[[sg.Text(options_ship_names[j])]] + [[sg.Input(default_text = options_header_1[i], size = (20, 1), readonly = True, enable_events = False), sg.Input(default_text = str(ships[j][i]), size = (10, 1), key = 'ship_' + str(j) + str(i), justification = 'right')]  for i in range(2, 16)] for j in range(9)]
+    ship_rows = [[[sg.Text(options_ship_names[j])]] + [[sg.Input(default_text = options_header_1[i], size = (20, 1), readonly = True, enable_events = False), sg.Input(default_text = str(ships[j][i]), size = (10, 1), key = 'ship_' + str(j) + str(i), justification = 'right')]  for i in range(2, 17)] for j in range(9)]
     
-    to_check_ids_options = ['ship_' + str(j) + str(i) for j in range(9) for i in range(3, 16)]
+    to_check_ids_options = ['ship_' + str(j) + str(i) for j in range(9) for i in range(3, 17)]
     text = "to_check_ids_options list:\n%s" % (to_check_ids_options)
     _log(text)
     print(text)
@@ -1013,12 +1026,12 @@ def _options_ships_popup():
                             d_id = i
                             break
                     ships[j][2] = d_id
-                    for i in range(3, 16):
+                    for i in range(3, 17):
                         ships[j][i] = int(values['ship_' + str(j) + str(i)])
                 if _check_ships_before_saving(ships):
                     _save_ships_to_file(ships)
                     for j in range(9):
-                        for i in range(16):
+                        for i in range(17):
                             listofships[j][i] = ships[j][i]
                     break
         elif event in ('Закрыть без сохранения', sg.WIN_CLOSED):
@@ -1072,6 +1085,7 @@ def _tab1_layout():
     headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
     headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
     headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(0, 4)]
+    headings_antirocket = ['Корабль', 'Количество', 'Стоимость', 'Время постройки']
     
     t1c1_header =  [[sg.Text(' '*14)] + [sg.Text('Флот 1')]]
     t1c2_header =  [[sg.Text(' '*14)] + [sg.Text('Флот 2')]]
@@ -1127,6 +1141,7 @@ def _tab1_layout():
     #sub_column_15 += [[sg.Input(default_text = 'ЗБТ: наносить ли пассивный урон, если есть ракеты?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't1_do_passive', default_value = 'Нет')]]
     sub_column_15 += [[sg.Input(default_text = 'Ракеты по блокаде?', size = (21, 1), readonly = True), sg.Combo(['Да', 'Нет'], readonly = True, key = 't1_blockade', default_value = 'Нет')]]
     sub_column_15 += [[sg.Input(default_text = 'приор. блок. против ракет:', size = (21, 1), readonly = True), sg.Combo(['Атака', 'Защита'], readonly = True, key = 't1_blockade_priority', default_value = 'Атака')]]
+    sub_column_15 += [[sg.Checkbox(text = 'Учитывать ракеты Sticks, Cobra и Аврора', default = True, enable_events = False, key = 't1_calc_rockets')]]
     
     my_yseparator = [[sg.Text('|')] for i in range(29)]
     my_hseparator_1 = [[sg.Text('_'*150)]]
@@ -1150,7 +1165,22 @@ def _tab1_layout():
     tab1_column_7 = t1c5_acc + [[sg.Button('Рассчитать потери')]]
     tab1_column_8 = t1c5_header + t1c7_row_turrets
 
-    tab1_scrollable_column = my_hseparator_1 + [[sg.Column(tab1_column_1), sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_2), sg.Column(tab1_column_6), sg.VSeperator(), sg.Column(tab1_column_8)]] + my_hseparator_2 + [[sg.Column(tab1_column_3), sg.VSeperator(), sg.Column(tab1_column_4), sg.VSeperator(), sg.Column(tab1_column_7)]]
+    resources = default_resource_names
+    grab_ships = [default_ship_list[i][0] for i in [0,1,2,3,4,6,7]]
+    tab_grab_input = [[sg.Input(default_text = resources[i], size = (10, 0), readonly = True), sg.Input(default_text = "0", key = "t1_grab_input_" + str(i), size = (12, 0), justification = "right")] for i in range(len(resources))]
+    tab_grab_output = [[sg.Input(default_text = grab_ships[i], size = (10, 0), readonly = True), sg.Input(default_text = "0", key = "t1_grab_output_" + str(i), size = (12, 0), justification = "right", readonly = True)] for i in range(len(grab_ships))]
+    tab_group_grab_resources = [[sg.Text("Ресурсы на планете")]] + tab_grab_input
+    tab_group_grab_ships = [[sg.Text("Корабли для вывоза ресурсов")]] + tab_grab_output
+    tab_group_grab_grab = [[sg.Column([[sg.Column(tab_group_grab_resources), sg.Column([[sg.Button("Рассчитать", key = "t1_calc_resources")]]), sg.Column(tab_group_grab_ships)]])]]
+    tab_antirockets = [[sg.Text("Варианты кораблей для взаимоуничтожения ракет,\nсортировка по стоимости от меньшего к большему")], [sg.Button("Рассчитать", key = "t1_calc_rockets_btn"), sg.Text("       Ракеты Sticks и Аврора в блокаде")]] + [[sg.Text(headings_antirocket[i], size = (8, 0) if i == 2 or i == 3 else (9, 0), justification = "right" if i != 0 else "left") for i in range(len(headings_antirocket))]] + [[sg.Input(default_text = "", key = "t1_antirocket_ship_" + str(i), size = (10, 0), readonly = True), sg.Input(default_text = "", key = "t1_antirocket_number_" + str(i), size = (10, 0), readonly = True, justification = "right"), sg.Input(default_text = "", key = "t1_antirocket_cost_" + str(i), size = (10, 0), readonly = True, justification = "right"), sg.Input(default_text = "", key = "t1_antirocket_time_" + str(i), size = (10, 0), readonly = True, justification = "right")] for i in range(3)]
+    tab_antirockets += [[sg.Text("Ракеты Cobra и Аврора в атаке (с учётом урона пушек)")]] + [[sg.Input(default_text = "", key = "t1_antirocket_ship_" + str(i), size = (10, 0), readonly = True), sg.Input(default_text = "", key = "t1_antirocket_number_" + str(i), size = (10, 0), readonly = True, justification = "right"), sg.Input(default_text = "", key = "t1_antirocket_cost_" + str(i), size = (10, 0), readonly = True, justification = "right"), sg.Input(default_text = "", key = "t1_antirocket_time_" + str(i), size = (10, 0), readonly = True, justification = "right")] for i in range(3, 6)]
+    tab_group_antirockets = [[sg.Column(tab_antirockets)]]
+
+    tab_group_for_out = [[sg.Column(tab1_column_3), sg.VSeperator(), sg.Column(tab1_column_4), sg.VSeperator(), sg.Column(tab1_column_7)]]
+
+    tab_group_output = [[sg.pin(sg.Column([[sg.TabGroup([[sg.Tab("Сражение флотов", tab_group_for_out), sg.Tab("Ограбление", tab_group_grab_grab), sg.Tab("Уничтожить ракеты", tab_group_antirockets)]], key = "-OUTPUT TAB_1 GROUP-")]]))]]
+
+    tab1_scrollable_column = my_hseparator_1 + [[sg.Column(tab1_column_1), sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_2), sg.Column(tab1_column_6), sg.VSeperator(), sg.Column(tab1_column_8)]] + my_hseparator_2 + tab_group_output
 
     return [[my_yseparator_col, sg.Column(tab1_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]
 
@@ -1363,7 +1393,8 @@ def _tab1_layout_simplified(input_view):
     headings_ship_names = ['Джавелин', 'Хорнет', 'Раптор', 'Экскалибр', 'Аббадон', 'Локи', 'Геркулес', 'Валькирия', 'Титан']
     headings_type_damage = ['Лазер', 'Кинетика', 'Плазма', 'Ракеты', 'Рельса']
     headings_type_defense = ['от лазера', 'от кинетики', 'от плазмы', 'от ракет', 'от рельсы']
-    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(1, 4)]
+    headings_type_turrets = ['Сумма уровней турелей'] + [listofrockets[i][0] for i in range(0, 4)]
+    headings_antirocket = ['Корабль', 'Количество'] #, 'Стоимость', 'Время постройки']
     SYMBOL_RIGHT = '►'
     SYMBOL_LEFT =  '◄'
     
@@ -1398,7 +1429,8 @@ def _tab1_layout_simplified(input_view):
 
         # key Турели и ракеты
         sub_column_15 = [[sg.Input(default_text = 'Тип планеты', readonly = True, size = (21, 1)), sg.Combo(default_planet_names , readonly = True, key = 't1s_planet_type', default_value = 'T1 Ториум')], [sg.Input(default_text = 'Кол-во шахт', readonly = True, size = (21, 1)), sg.Combo(default_mines_quantity , readonly = True, key = 't1s_planet_mines', default_value = '3 шахты')]]
-        sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't1sc8_' + str(i))] for i in range(4)]
+        sub_column_15 += [[sg.Input(default_text = headings_type_turrets[i], size = (21, 1), readonly = True), sg.Input(default_text = '0', size = (10, 1), justification = 'right', key = 't1sc8_' + str(i))] for i in range(5)]
+        sub_column_15 += [[sg.Checkbox(text = 'Учитывать ракеты Cobra и Аврора', default = True, enable_events = False, key = 't1s_calc_rockets')]]
 
         # keys потеряно кораблей Флот 1 и их стоимость
         sub_column_5 = [[sg.Text(headings_2[0])]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_ship_names]
@@ -1442,7 +1474,8 @@ def _tab1_layout_simplified(input_view):
 
         # key Турели и ракеты
         sub_column_15 = [[sg.Text('Тип планеты', font = font_t, size = (21, 1)), sg.Combo(default_planet_names, font = font_t, readonly = True, key = 't1s_planet_type', default_value = 'T1 Ториум')], [sg.Text('Кол-во шахт', font = font_t, size = (21, 1)), sg.Combo(default_mines_quantity, font = font_t, readonly = True, key = 't1s_planet_mines', default_value = '3 шахты')]]
-        sub_column_15 += [[sg.Text(headings_type_turrets[i], font = font_t, size = (21, 1)), sg.Input(default_text = '0', font = font_t, size = (10, 1), justification = 'right', key = 't1sc8_' + str(i))] for i in range(4)]
+        sub_column_15 += [[sg.Text(headings_type_turrets[i], font = font_t, size = (21, 1)), sg.Input(default_text = '0', font = font_t, size = (10, 1), justification = 'right', key = 't1sc8_' + str(i))] for i in range(5)]
+        sub_column_15 += [[sg.Checkbox(text = 'Учитывать ракеты Cobra и Аврора', default = True, enable_events = False, key = 't1s_calc_rockets', font = font_t)]]
 
         # keys потеряно кораблей Флот 1 и их стоимость
         sub_column_5 = [[sg.Text(headings_2[0], font = font_t)]] + [[sg.Text(h, font = font_t, size = (9, 1), enable_events = False)] for h in headings_ship_names]
@@ -1478,13 +1511,26 @@ def _tab1_layout_simplified(input_view):
     
     tab_group = [[sg.Button(SYMBOL_RIGHT, pad=(0,0), key='-HIDE TAB 1 SUB-'),sg.pin(sg.Column([[sg.TabGroup([[sg.Tab('Турели и ракеты противника', tab1_column_4)]])]], key = '-TURRET TAB GROUP-', visible = False, metadata = False))]]
     
+    resources = default_resource_names
+    grab_ships = [default_ship_list[i][0] for i in [0,1,2,3,4,6,7]]
+    tab_grab_input = [[sg.Text(resources[i], size = (10, 0), font = font_t), sg.Input(default_text = "0", key = "t1s_grab_input_" + str(i), size = (12, 0), justification = "right", font = font_t)] for i in range(len(resources))]
+    tab_grab_output = [[sg.Text(grab_ships[i], size = (10, 0), font = font_t), sg.Text("0", key = "t1s_grab_output_" + str(i), size = (12, 0), justification = "right", font = font_b)] for i in range(len(grab_ships))]
+    tab_group_grab_resources = [[sg.Text("Ресурсы на планете", font = font_t)]] + tab_grab_input
+    tab_group_grab_ships = [[sg.Text("Корабли для вывоза ресурсов", font = font_t)]] + tab_grab_output
+    tab_group_grab_grab = [[sg.Column([[sg.Column(tab_group_grab_resources), sg.Column([[sg.Button("Рассчитать", key = "t1s_calc_resources", font = font_t)]]), sg.Column(tab_group_grab_ships)]])]]
+    tab_antirockets = [[sg.Text("Варианты кораблей для взаимоуничтожения ракет,\nсортировка по стоимости от меньшего к большему", font = font_sh)], [sg.Button("Рассчитать", key = "t1s_calc_rockets_btn", font = font_t)]]
+    tab_antirockets_1 = [[sg.Text("  Ракеты Sticks и Аврора в блокаде", font = font_sh)]] + [[sg.Text(headings_antirocket[i], size = (11, 0) if i != 0 else (10, 0), font = font_t, justification = "right" if i != 0 else "left") for i in range(len(headings_antirocket))]] + [[sg.Text("", key = "t1s_antirocket_ship_" + str(i), size = (10, 0), font = font_t), sg.Text("", key = "t1s_antirocket_number_" + str(i), size = (10, 0), font = font_b, justification = "right")] for i in range(3)]
+    tab_antirockets_2 = [[sg.Text("  Ракеты Cobra и Аврора в атаке (с учётом урона пушек)", font = font_sh)]] + [[sg.Text(headings_antirocket[i], size = (11, 0) if i != 0 else (10, 0), font = font_t, justification = "right" if i != 0 else "left") for i in range(len(headings_antirocket))]] + [[sg.Text("", key = "t1s_antirocket_ship_" + str(i), size = (10, 0), font = font_t), sg.Text("", key = "t1s_antirocket_number_" + str(i), size = (10, 0), font = font_b, justification = "right")] for i in range(3, 6)]
+    tab_antirockets += [[sg.Column(tab_antirockets_1), sg.VSeperator(), sg.Column(tab_antirockets_2)]]
+    tab_group_antirockets = [[sg.Column(tab_antirockets)]]
+    
     tab_group_for_out = [[sg.Column([[sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_6)]])]]
-    tab_group_output = [[sg.Button('...', pad=(0,0), key='-HIDE TAB 1 OUT-'),sg.pin(sg.Column(tab_group_for_out, key = '-OUTPUT TAB GROUP-', visible = False, metadata = False))]]
+    tab_group_output = [[sg.Button('...', pad=(0,0), key='-SHOW TAB 1 OUT-'),sg.pin(sg.Column([[sg.TabGroup([[sg.Tab("  Сражение флотов", tab_group_for_out), sg.Tab("           Ограбление", tab_group_grab_grab), sg.Tab("Уничтожить ракеты", tab_group_antirockets)]], tab_location = "left", key = "-OUTPUT TAB_S GROUP-")]], key = '-OUTPUT TAB GROUP-', visible = False, metadata = False))]]
     # sg.TabGroup([[sg.Tab('Результаты', tab_group_for_out)]])
     
     tab1_scrollable_column = [[sg.Column(tab1_column_1), sg.Column(tab1_column_2), sg.Column(tab1_column_3), sg.Column(tab_group)]] + my_hseparator_2 + tab_group_output
     
-    return [[sg.Column(tab1_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]
+    return [[sg.Column(tab1_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]   # , vertical_scroll_only = True
 
 def _tab2_layout_simplified():
     headings_1 = ['Корабль', 'Количество']
@@ -1661,6 +1707,8 @@ def _main():
     to_check_ids_tab_1_a = ['t1c1m' + str(i) for i in range(12)] + ['t1c1n' + str(i) for i in range(12)]
     to_check_ids_tab_1_b = ['t1_acc']
     to_check_ids_tab_1_c = ['t1c8_' + str(i) for i in range(5)]
+    to_check_ids_tab_1_d = ['t1_grab_input_' + str(i) for i in range(len(default_resource_names))]
+    to_check_ids_tab_1_special = ['t1c1m0', 't1c1m1', 't1c8_0', 't1c8_1', 't1c8_2', 't1c8_3', 't1c8_4'] + ['t1c1m' + str(i) for i in range(7, 12)]
     to_check_ids_tab_2 = ['t2c2_' + str(i) for i in range(9)]
     to_check_ids_tab_2_a = ['t2c1m_' + str(i) for i in range(12)] + ['t2c2m_' + str(i) for i in range(12)]
     to_check_ids_tab_2_b = ['t2_acc']
@@ -1673,7 +1721,7 @@ def _main():
     text = "to_check_ids_tab_1 list:\n%s" % (to_check_ids_tab_1)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_1_a list:\n%s\nand tab_1_b:\n%s\nand tab_1_c:\n%s" % (to_check_ids_tab_1_a, to_check_ids_tab_1_b, to_check_ids_tab_1_c)
+    text = "to_check_ids_tab_1_a list:\n%s\nand tab_1_b:\n%s\nand tab_1_c:\n%s\n and to_check_ids_tab_1_d:\n%s\n and to_check_ids_tab_1_special:\n%s\n" % (to_check_ids_tab_1_a, to_check_ids_tab_1_b, to_check_ids_tab_1_c, to_check_ids_tab_1_d, to_check_ids_tab_1_special)
     _log(text)
     print(text)
     text = "to_check_ids_tab_2 list:\n%s" % (to_check_ids_tab_2)
@@ -1695,6 +1743,8 @@ def _main():
     to_check_ids_tab_1s = ['t1sc1' + str(i) + str(j) for i in range(1, 3) for j in range(0, 9)]
     to_check_ids_tab_1s_a = ['t1sc1m' + str(i) for i in range(2)] + ['t1sc1n' + str(i) for i in range(2)]
     to_check_ids_tab_1s_b = ['t1sc8_' + str(i) for i in range(4)]
+    to_check_ids_tab_1s_c = ['t1s_grab_input_' + str(i) for i in range(len(default_resource_names))]
+    to_check_ids_tab_1s_special = ['t1sc1m0', 't1sc1m1', 't1sc8_0', 't1sc8_1', 't1sc8_2', 't1sc8_3', 't1sc8_4']
     to_check_ids_tab_2s = ['t2sc2_' + str(i) for i in range(9)]
     to_check_ids_tab_2s_a = ['t2sc1m_' + str(i) for i in range(2)] + ['t2sc2m_' + str(i) for i in range(2)]
     to_check_ids_tab_2s_b = ['t2sc6_' + str(i) for i in range(3)]
@@ -1703,7 +1753,7 @@ def _main():
     text = "to_check_ids_tab_1s list:\n%s" % (to_check_ids_tab_1s)
     _log(text)
     print(text)
-    text = "to_check_ids_tab_1s_a list:\n%s\nand tab_1s_b:\n%s" % (to_check_ids_tab_1s_a, to_check_ids_tab_1s_b)
+    text = "to_check_ids_tab_1s_a list:\n%s\nand tab_1s_b:\n%s\n and to_check_ids_tab_1s_c:\n%s\n and to_check_ids_tab_1s_special:\n%s\n" % (to_check_ids_tab_1s_a, to_check_ids_tab_1s_b, to_check_ids_tab_1s_c, to_check_ids_tab_1s_special)
     _log(text)
     print(text)
     text = "to_check_ids_tab_2s list:\n%s" % (to_check_ids_tab_2s)
@@ -1831,6 +1881,7 @@ def _main():
                             type_acc_random = False
                         
                         # This is the place for turret and rocket calculations
+                        calc_rockets = values["t1_calc_rockets"]
                         if values['t1_blockade'] == "Да":
                             on_blockade = True
                         else:
@@ -1847,6 +1898,10 @@ def _main():
                         all_rockets = []
                         for i in range(4):
                             all_rockets.append([i, int(values['t1c8_' + str(i + 1)])])
+                        if not calc_rockets:
+                            all_rockets[0][1] = 0
+                            all_rockets[1][1] = 0
+                            all_rockets[2][1] = 0
                         text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
                         _log(text)
                         print(text)
@@ -2298,6 +2353,110 @@ def _main():
             title = "Особенности расчёта"
             text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nТакже изменён принцип ввода уровней для зданий:\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик.\n\nВозможные варианты:\n1. Просто число = уровень здания этого типа.\n2. число*число (число умножить на число, два числа через звёздочку) -> уровень здания * кол-во таких зданий.\n3. Просто числа через разделитель - уровни зданий этого типа.\n\nПримеры:\n20 или 14, 13,11 или 10*2.11*3+10 + 9"
             _error_popup_value_error(title, text)
+        elif event == "t1_calc_resources" and not simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_1_d):
+                list_of_grab_resources = [int(values[to_check_ids_tab_1_d[i]]) for i in range(len(to_check_ids_tab_1_d))]
+                text = "list_of_grab_resources:\n%s" % (list_of_grab_resources)
+                _log(text)
+                print(text)
+                empty_resources = True
+                for elem in list_of_grab_resources:
+                    if elem != 0:
+                        empty_resources = False
+                        break
+                if not empty_resources:
+                    list_of_grab_ships = [_calc_ships_for_resources(list_of_grab_resources, i) for i in [0, 1, 2, 3, 4, 6, 7]]
+                    text = "list_of_grab_ships:\n%s" % (list_of_grab_ships)
+                    _log(text)
+                    print(text)
+                    for i in range(7):
+                        window["t1_grab_output_" + str(i)].update(value = _separator_for_output(list_of_grab_ships[i]))
+        elif event == "t1_calc_rockets_btn" and not simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_1_special):
+                module1 = [1 + int(values['t1c1m0']) / 100, 1 + int(values['t1c1m1']) / 100]
+                defense_type_mod_1 = [(1 + int(values['t1c1m' + str(i)]) / 100) for i in range(7, 12)]
+                all_rockets = []
+                for i in range(4):
+                    all_rockets.append([i, int(values['t1c8_' + str(i + 1)])])
+                empty = True
+                for rocket in all_rockets:
+                    if rocket[1] != 0:
+                        empty = False
+                        break
+                if empty:
+                    continue
+                j = int(values['t1_planet_type'][1])
+                k = int(values['t1_planet_mines'][0])
+                planetary_coef = default_planetary_coefs[j][k]
+                turret_damage = 100 * planetary_coef
+                turret_level = int(values['t1c8_0'])
+                text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
+                _log(text)
+                print(text)
+                turret_sum_damage = turret_damage * turret_level
+                do_theory = True
+                on_blockade_attack = True
+                on_blockade = True
+                # [[0, all_rockets[0]], [1, 0], [2, all_rockets[2]], [3, 0]]
+                antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, all_rockets[0][1]], [1, 0], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                print(antirocket_ships_list_raw)
+                antiblockade_ships_list = []
+                for rrr in antirocket_ships_list_raw:
+                    antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
+                text = "\nShips to destroy rockets in the blockade:\n%s\n" % (antiblockade_ships_list)
+                _log(text)
+                print(text)
+                forstatistics = [[i, antiblockade_ships_list[i], listofships[i][9] * antiblockade_ships_list[i], listofships[i][15] * antiblockade_ships_list[i]] for i in range(len(antiblockade_ships_list))]
+                print(forstatistics)
+                forstatistics_antiblockade_top3 = []
+                for i in range(3):
+                    min_cost = forstatistics[0][2]
+                    index = 0
+                    for j in range(len(forstatistics)):
+                        if min_cost > forstatistics[j][2]:
+                            min_cost = forstatistics[j][2]
+                            index = j
+                    forstatistics_antiblockade_top3.append(forstatistics[index])
+                    forstatistics.pop(index)
+                text = "\nTop 3 in energy cost to destroy anti blockade rockets (%s %s and %s %s):\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n" % (listofrockets[0][0], all_rockets[0][1], listofrockets[2][0], all_rockets[2][1], listofships[forstatistics_antiblockade_top3[0][0]][0], forstatistics_antiblockade_top3[0][1], forstatistics_antiblockade_top3[0][2], forstatistics_antiblockade_top3[0][3], listofships[forstatistics_antiblockade_top3[1][0]][0], forstatistics_antiblockade_top3[1][1], forstatistics_antiblockade_top3[1][2], forstatistics_antiblockade_top3[1][3], listofships[forstatistics_antiblockade_top3[2][0]][0], forstatistics_antiblockade_top3[2][1], forstatistics_antiblockade_top3[2][2], forstatistics_antiblockade_top3[2][3])
+                _log(text)
+                print(text)
+                for i in range(3):
+                    window["t1_antirocket_ship_" + str(i)].update(value = listofships[forstatistics_antiblockade_top3[i][0]][0] if listofships[forstatistics_antiblockade_top3[i][0]][0] != "Локи" else "Локи (баг)")
+                    window["t1_antirocket_number_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][1]))
+                    window["t1_antirocket_cost_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][2]))
+                    window["t1_antirocket_time_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][3]))
+                
+                antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, 0], [1, all_rockets[1][1]], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                print(antirocket_ships_list_raw)
+                for i in range(len(antirocket_ships_list_raw)):
+                    antirocket_ships_list_raw[i] += int(_my_round_threshhold_up(turret_sum_damage / (listofships[i][14] * module1[1] * defense_type_mod_1[4]), 0, threshhold))
+                antiblockade_ships_list = []
+                for rrr in antirocket_ships_list_raw:
+                    antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
+                text = "\nShips to destroy rockets in the blockade:\n%s\n" % (antiblockade_ships_list)
+                _log(text)
+                print(text)
+                forstatistics = [[i, antiblockade_ships_list[i], listofships[i][9] * antiblockade_ships_list[i], listofships[i][15] * antiblockade_ships_list[i]] for i in range(len(antiblockade_ships_list))]
+                print(forstatistics)
+                forstatistics_antiblockade_top3 = []
+                for i in range(3):
+                    min_cost = forstatistics[0][2]
+                    index = 0
+                    for j in range(len(forstatistics)):
+                        if min_cost > forstatistics[j][2]:
+                            min_cost = forstatistics[j][2]
+                            index = j
+                    forstatistics_antiblockade_top3.append(forstatistics[index])
+                    forstatistics.pop(index)
+                text = "\nTop 3 in energy cost to destroy anti blockade rockets (%s %s and %s %s):\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n" % (listofrockets[0][0], all_rockets[0][1], listofrockets[2][0], all_rockets[2][1], listofships[forstatistics_antiblockade_top3[0][0]][0], forstatistics_antiblockade_top3[0][1], forstatistics_antiblockade_top3[0][2], forstatistics_antiblockade_top3[0][3], listofships[forstatistics_antiblockade_top3[1][0]][0], forstatistics_antiblockade_top3[1][1], forstatistics_antiblockade_top3[1][2], forstatistics_antiblockade_top3[1][3], listofships[forstatistics_antiblockade_top3[2][0]][0], forstatistics_antiblockade_top3[2][1], forstatistics_antiblockade_top3[2][2], forstatistics_antiblockade_top3[2][3])
+                _log(text)
+                print(text)
+                for i in range(3):
+                    window["t1_antirocket_ship_" + str(i + 3)].update(value = listofships[forstatistics_antiblockade_top3[i][0]][0] if listofships[forstatistics_antiblockade_top3[i][0]][0] != "Локи" else "Локи (баг)")
+                    window["t1_antirocket_number_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][1]))
+                    window["t1_antirocket_cost_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][2]))
+                    window["t1_antirocket_time_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][3]))
 
         elif event == "Рассчитать потери" and simplified:
             if _check_is_a_positive_number(values, to_check_ids_tab_1s) and _check_is_a_positive_number(values, to_check_ids_tab_1s_b) and _check_is_a_positive_number(values, to_check_ids_tab_1s_a):
@@ -2334,6 +2493,7 @@ def _main():
                     type_acc_random = True
                     
                     # This is the place for turret and rocket calculations
+                    calc_rockets = values["t1s_calc_rockets"]
                     on_blockade = False
                     on_blockade_attack = True
                     j = int(values['t1s_planet_type'][1])
@@ -2342,8 +2502,11 @@ def _main():
                     turret_damage = 100 * planetary_coef
                     turret_level = int(values['t1sc8_0'])
                     all_rockets = []
-                    for i in range(3):
-                        all_rockets.append([i + 1, int(values['t1sc8_' + str(i + 1)])])
+                    for i in range(4):
+                        all_rockets.append([i, int(values['t1sc8_' + str(i + 1)])])
+                    if not calc_rockets:
+                        all_rockets[1][1] = 0
+                        all_rockets[2][1] = 0
                     text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
                     _log(text)
                     print(text)
@@ -2413,6 +2576,7 @@ def _main():
                         tab_1_results[1].append(0)
                         tab_1_results[1].append(_calc_build_time(team2))
                     
+                    window["-OUTPUT TAB_S GROUP-"].Widget.select(0)
                     if do_once:
                         window['-OUTPUT TAB GROUP-'].update(visible = True)
                         do_once = False
@@ -2612,6 +2776,115 @@ def _main():
             title = "Особенности расчёта"
             text = "В целом расчёты стали точны, но на генератор щита следует отправлять чуть-чуть больше,\nособенно, если используется модуль.\n\nВ колонке Уровни просто перечислите уровни здания через запятую.\n\nПримеры:\n\n 20\n 14, 13, 11\n 20*5\n\n 20*5 - это 5 зданий 20го уровня.\n\nДопустимые символы для ввода - числа, звёздочка, разделители: запятая, точка, плюсик."
             _error_popup_value_error(title, text)
+        elif event == "t1s_calc_resources" and simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_1s_c):
+                list_of_grab_resources = [int(values[to_check_ids_tab_1s_c[i]]) for i in range(len(to_check_ids_tab_1s_c))]
+                text = "list_of_grab_resources:\n%s" % (list_of_grab_resources)
+                _log(text)
+                print(text)
+                empty_resources = True
+                for elem in list_of_grab_resources:
+                    if elem != 0:
+                        empty_resources = False
+                        break
+                if not empty_resources:
+                    list_of_grab_ships = [_calc_ships_for_resources(list_of_grab_resources, i) for i in [0, 1, 2, 3, 4, 6, 7]]
+                    text = "list_of_grab_ships:\n%s" % (list_of_grab_ships)
+                    _log(text)
+                    print(text)
+                    for i in range(7):
+                        window["t1s_grab_output_" + str(i)].update(value = _separator_for_output(list_of_grab_ships[i]))
+        elif event == "t1s_calc_rockets_btn" and simplified:
+            if _check_is_a_positive_number(values, to_check_ids_tab_1s_special):
+                module1 = [1 + int(values['t1sc1m0']) / 100, 1 + int(values['t1sc1m1']) / 100]
+                defense_type_mod_1 = [1, 1, 1, 1, 1]
+                all_rockets = []
+                for i in range(4):
+                    all_rockets.append([i, int(values['t1sc8_' + str(i + 1)])])
+                empty = True
+                for rocket in all_rockets:
+                    if rocket[1] != 0:
+                        empty = False
+                        break
+                if empty:
+                    continue
+                j = int(values['t1s_planet_type'][1])
+                k = int(values['t1s_planet_mines'][0])
+                planetary_coef = default_planetary_coefs[j][k]
+                turret_damage = 100 * planetary_coef
+                turret_level = int(values['t1sc8_0'])
+                text = "\nPlanetary_coef %s, turret_damage %s, turret_level %s, rocket_list %s" % (planetary_coef, turret_damage, turret_level, all_rockets)
+                _log(text)
+                print(text)
+                turret_sum_damage = turret_damage * turret_level
+                do_theory = True
+                on_blockade_attack = True
+                on_blockade = True
+                # [[0, all_rockets[0]], [1, 0], [2, all_rockets[2]], [3, 0]]
+                antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, all_rockets[0][1]], [1, 0], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                print(antirocket_ships_list_raw)
+                antiblockade_ships_list = []
+                for rrr in antirocket_ships_list_raw:
+                    antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
+                text = "\nShips to destroy rockets in the blockade:\n%s\n" % (antiblockade_ships_list)
+                _log(text)
+                print(text)
+                forstatistics = [[i, antiblockade_ships_list[i], listofships[i][9] * antiblockade_ships_list[i], listofships[i][15] * antiblockade_ships_list[i]] for i in range(len(antiblockade_ships_list))]
+                print(forstatistics)
+                forstatistics_antiblockade_top3 = []
+                for i in range(3):
+                    min_cost = forstatistics[0][2]
+                    index = 0
+                    for j in range(len(forstatistics)):
+                        if min_cost > forstatistics[j][2]:
+                            min_cost = forstatistics[j][2]
+                            index = j
+                    forstatistics_antiblockade_top3.append(forstatistics[index])
+                    forstatistics.pop(index)
+                text = "\nTop 3 in energy cost to destroy anti blockade rockets (%s %s and %s %s):\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n" % (listofrockets[0][0], all_rockets[0][1], listofrockets[2][0], all_rockets[2][1], listofships[forstatistics_antiblockade_top3[0][0]][0], forstatistics_antiblockade_top3[0][1], forstatistics_antiblockade_top3[0][2], forstatistics_antiblockade_top3[0][3], listofships[forstatistics_antiblockade_top3[1][0]][0], forstatistics_antiblockade_top3[1][1], forstatistics_antiblockade_top3[1][2], forstatistics_antiblockade_top3[1][3], listofships[forstatistics_antiblockade_top3[2][0]][0], forstatistics_antiblockade_top3[2][1], forstatistics_antiblockade_top3[2][2], forstatistics_antiblockade_top3[2][3])
+                _log(text)
+                print(text)
+                for i in range(3):
+                    window["t1s_antirocket_ship_" + str(i)].update(value = listofships[forstatistics_antiblockade_top3[i][0]][0] if listofships[forstatistics_antiblockade_top3[i][0]][0] != "Локи" else "Локи (баг)")
+                    window["t1s_antirocket_number_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][1]))
+                    #window["t1s_antirocket_cost_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][2]))
+                    #window["t1s_antirocket_time_" + str(i)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][3]))
+                
+                antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, 0], [1, all_rockets[1][1]], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
+                print(antirocket_ships_list_raw)
+                for i in range(len(antirocket_ships_list_raw)):
+                    antirocket_ships_list_raw[i] += int(_my_round_threshhold_up(turret_sum_damage / (listofships[i][14] * module1[1] * defense_type_mod_1[4]), 0, threshhold))
+                antiblockade_ships_list = []
+                for rrr in antirocket_ships_list_raw:
+                    antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
+                text = "\nShips to destroy rockets in the blockade:\n%s\n" % (antiblockade_ships_list)
+                _log(text)
+                print(text)
+                forstatistics = [[i, antiblockade_ships_list[i], listofships[i][9] * antiblockade_ships_list[i], listofships[i][15] * antiblockade_ships_list[i]] for i in range(len(antiblockade_ships_list))]
+                print(forstatistics)
+                forstatistics_antiblockade_top3 = []
+                for i in range(3):
+                    min_cost = forstatistics[0][2]
+                    index = 0
+                    for j in range(len(forstatistics)):
+                        if min_cost > forstatistics[j][2]:
+                            min_cost = forstatistics[j][2]
+                            index = j
+                    forstatistics_antiblockade_top3.append(forstatistics[index])
+                    forstatistics.pop(index)
+                text = "\nTop 3 in energy cost to destroy anti blockade rockets (%s %s and %s %s):\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n%s %s %s$ build %s seconds\n" % (listofrockets[0][0], all_rockets[0][1], listofrockets[2][0], all_rockets[2][1], listofships[forstatistics_antiblockade_top3[0][0]][0], forstatistics_antiblockade_top3[0][1], forstatistics_antiblockade_top3[0][2], forstatistics_antiblockade_top3[0][3], listofships[forstatistics_antiblockade_top3[1][0]][0], forstatistics_antiblockade_top3[1][1], forstatistics_antiblockade_top3[1][2], forstatistics_antiblockade_top3[1][3], listofships[forstatistics_antiblockade_top3[2][0]][0], forstatistics_antiblockade_top3[2][1], forstatistics_antiblockade_top3[2][2], forstatistics_antiblockade_top3[2][3])
+                _log(text)
+                print(text)
+                for i in range(3):
+                    window["t1s_antirocket_ship_" + str(i + 3)].update(value = listofships[forstatistics_antiblockade_top3[i][0]][0] if listofships[forstatistics_antiblockade_top3[i][0]][0] != "Локи" else "Локи (баг)")
+                    window["t1s_antirocket_number_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][1]))
+                    #window["t1s_antirocket_cost_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][2]))
+                    #window["t1s_antirocket_time_" + str(i + 3)].update(value = _separator_for_output(forstatistics_antiblockade_top3[i][3]))
+        elif event == "-SHOW TAB 1 OUT-":
+            if window['-OUTPUT TAB GROUP-'].visible == False:
+                window['-OUTPUT TAB GROUP-'].update(visible = True)
+            #elif window['-OUTPUT TAB GROUP-'].visible == True:
+            #    window['-OUTPUT TAB GROUP-'].update(visible = False)
         if new_layout:
             window.close()
             del layout
@@ -2645,6 +2918,16 @@ def _my_round_up(number):
     number = _my_truncate(number, 0)
     return number + 1
 
+def _my_round_up_(number):
+    if number != 0:
+        num_mod = number % int(number)
+        if num_mod != 0:
+            return _my_truncate(number, 0) + 1
+        else:
+            return number
+    else:
+        return number
+
 def _my_round_down(number):
     return math.floor(number)
 
@@ -2667,6 +2950,17 @@ def _calc_percent_for_output(a, b, digits):
         return c, d
     else:
         return 100, 0
+
+def _calc_ships_for_resources(resources, ship_id):
+    grab_ships_needed = 0
+    if listofships[ship_id][16] != 0:
+        for i in range(7):
+            grab_ships_needed += resources[i] / listofships[ship_id][16]
+        grab_ships_needed += resources[7] * 100 / listofships[ship_id][16]
+        grab_ships_needed += resources[8] / (listofships[ship_id][16] * 100)
+        if grab_ships_needed < 1:
+            grab_ships_needed = 1
+    return int(_my_round_up_(grab_ships_needed))
 
 def _overwhelming(ships_list):
     totaldefense = 0
