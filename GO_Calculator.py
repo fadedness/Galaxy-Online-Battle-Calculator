@@ -68,8 +68,8 @@ default_ship_list = [
     ['Раптор', 2, 1, 150, 150, 6, 1000, 3000, 6, 1500, 210, 150, 180, 90, 120, 720, 20],
     ['Экскалибр', 3, 3, 225, 275, 10, 1000, 3000, 5, 2750, 330, 385, 220, 275, 165, 1200, 10],
     ['Аббадон', 4, 4, 440, 360, 16, 1000, 3000, 4, 4400, 288, 432, 216, 504, 360, 1920, 10],
-    ['Локи', 5, 1, 20, 20, 1, 250, 100, 10, 400, 24, 20, 22, 16, 18, 120, 0],
-    ['Геркулес', 6, 0, 25, 275, 10, 250, 250, 5, 400, 275, 220, 330, 248, 303, 300, 100],
+    ['Локи', 5, 1, 20, 20, 1, 250, 100, 10, 300, 24, 20, 22, 16, 18, 120, 0],
+    ['Геркулес', 6, 0, 25, 275, 10, 250, 250, 5, 500, 275, 220, 330, 248, 303, 300, 100],
     ['Валькирия', 7, 3, 50, 100, 8, 5000, 250, 3, 5000, 110, 120, 90, 100, 80, 2400, 10],
     ['Титан', 8, 4, 200, 900, 100, 100, 100, 3, 32000, 810, 990, 720, 1080, 900, 5400, 0]
 ]
@@ -1272,7 +1272,7 @@ def _tab3_layout():
     t3c3_header = [[[sg.Text(' '*10)] + [sg.Text('Вариант %s' % (i))]] for i in range(1, 6)]
     t3c4_header = [[sg.Text(' '*20)] + [sg.Text('Цель: Флот 2')]]
     
-    t3c5_acc = [[sg.Text('Способ расчёта урона от меткости:\nРандом для каждого корабля\n(например, 80% - 100%)\nили фиксированный срез урона\nнапример, 80% от урона')], [sg.Input(default_text = 'Меткость', size = (11, 1), readonly = True, enable_events = False), sg.Input(default_text = '80', size = (7, 1), key = 't3_acc', justification = 'right')], [sg.Input(default_text = 'Способ', size = (11, 1), readonly = True, enable_events = False), sg.Combo(['Рандом', 'Фикс'], readonly = True, key = 't3_acc_type', default_value = 'Фикс')]]
+    t3c5_acc = [[sg.Text('Способ расчёта урона от меткости:\nРандом для каждого корабля\n(например, 80% - 100%)\nили фиксированный срез урона\nнапример, 80% от урона')], [sg.Input(default_text = 'Меткость', size = (11, 1), readonly = True, enable_events = False), sg.Input(default_text = '100', size = (7, 1), key = 't3_acc', justification = 'right')], [sg.Input(default_text = 'Способ', size = (11, 1), readonly = True, enable_events = False), sg.Combo(['Рандом', 'Фикс'], readonly = True, key = 't3_acc_type', default_value = 'Фикс')]]
     
     # keys Флот 1 модификаторы
     sub_column_1 = [[sg.Input(default_text = 'Атака', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = 'Защита', size = (12, 1), readonly = True, enable_events = False)]] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_type_damage] + [[sg.Input(default_text = h, size = (12, 1), readonly = True, enable_events = False)] for h in headings_type_defense]
@@ -2977,7 +2977,7 @@ def _overwhelming_single_ship(ship, i):
         totaldefense += ship * listofships[i][j]
     return totaldefense
 
-def _calc_mods(att_defense, def_defense, att_module, def_module):
+def _calc_mods_multiplied(att_defense, def_defense, att_module, def_module):
     att_mod = []
     def_mod = []
     att_mod.append(att_module[0] * 1)
@@ -2996,6 +2996,31 @@ def _calc_mods(att_defense, def_defense, att_module, def_module):
         overbonus2 = thold_max
     att_mod[1] = att_module[1] * overbonus1
     def_mod[1] = def_module[1] * overbonus2
+    return att_mod, def_mod
+
+def _calc_mods(att_defense, def_defense, att_module, def_module):
+    att_mod = []
+    def_mod = []
+    att_mod.append(att_module[0] * 1)
+    def_mod.append(def_module[0] * 1)
+    t1_def_mod_div = att_module[1] % 1
+    t2_def_mod_div = def_module[1] % 1
+    overbonus1 = 1
+    overbonus2 = 1
+    if att_defense > def_defense:
+        overbonus1 = (att_defense / def_defense - 1) * thold_per + 1
+    elif att_defense < def_defense:
+        overbonus2 = (def_defense / att_defense - 1) * thold_per + 1
+    if overbonus1 > thold_max:
+        overbonus1 = thold_max 
+    elif overbonus2 > thold_max:
+        overbonus2 = thold_max
+    if att_defense > def_defense:
+        t1_def_mod_div += overbonus1 % 1
+    elif att_defense < def_defense:
+        t2_def_mod_div += overbonus2 % 1
+    att_mod.append(1 + t1_def_mod_div)
+    def_mod.append(1 + t2_def_mod_div)
     return att_mod, def_mod
 
 def _prepare_for_bl(team1, team2, module1, module2):
