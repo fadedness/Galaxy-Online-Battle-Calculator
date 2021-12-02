@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #using pysimpleGUI
 #Galaxy Online Battle Calculator by @fadedness (telegram)
-#version 1.08
+#version 1.09
 
 import PySimpleGUI as sg
 import os.path
@@ -884,7 +884,7 @@ def _error_popup_value_error(title, text):
 def _my_popup_about():
     font_t = font_regular
     title = 'О программе'
-    text = 'version 1.08\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
+    text = 'version 1.09\n\nНаписано на Python3 с использованием библиотеки PySimpleGUI\nСкомпилировано для Windows с помощью PySimpleGUI-exemaker\n\n@fadedness - мой телеграм\n\nПринимаю Ваш фидбек: отзывы, предложения, баги и ошибки.\n\nЕсли Вам понравилась программа и Вы хотите меня отблагодарить, то можете сделать это следующими способами:\n\n'
     text += 'Minter\nMxe548ae76175bec07bca65010da7c7999db585cd2\n\n' + 'Long Coin\n16eBZWG99zT3JJEnT7Vk4UX2U1nByey8bo\n\n' + 'Near\nvalidol.near'
     text += '\n\nТакже Вы можете использовать мой реферальный код в самой игре - 50981714 - галактика Minter.'
     layout = [[sg.Multiline(default_text = text, font = font_t, disabled = True, size = (400, 22))], [sg.Text(' ' * 65), sg.Image(data = img_donut)]]#, [sg.Button('Закрыть')]]
