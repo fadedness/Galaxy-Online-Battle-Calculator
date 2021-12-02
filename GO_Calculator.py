@@ -1144,8 +1144,8 @@ def _tab1_layout():
     sub_column_15 += [[sg.Checkbox(text = 'Учитывать ракеты Sticks, Cobra и Аврора', default = True, enable_events = False, key = 't1_calc_rockets')]]
     
     my_yseparator = [[sg.Text('|')] for i in range(29)]
-    my_hseparator_1 = [[sg.Text('_'*150)]]
-    my_hseparator_2 = [[sg.Text('_'*150)]]
+    my_hseparator_1 = [[sg.Text('_'*190)]]
+    my_hseparator_2 = [[sg.Text('_'*190)]]
     my_yseparator_col = sg.Column(my_yseparator)
 
     t1c1_rows_ship_input = [[sg.Column(sub_column_1), sg.Column(sub_column_2)]]
@@ -1179,8 +1179,8 @@ def _tab1_layout():
     tab_group_for_out = [[sg.Column(tab1_column_3), sg.VSeperator(), sg.Column(tab1_column_4), sg.VSeperator(), sg.Column(tab1_column_7)]]
 
     tab_group_output = [[sg.pin(sg.Column([[sg.TabGroup([[sg.Tab("Сражение флотов", tab_group_for_out), sg.Tab("Ограбление", tab_group_grab_grab), sg.Tab("Уничтожить ракеты", tab_group_antirockets)]], key = "-OUTPUT TAB_1 GROUP-")]]))]]
-
-    tab1_scrollable_column = my_hseparator_1 + [[sg.Column(tab1_column_1), sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_2), sg.Column(tab1_column_6), sg.VSeperator(), sg.Column(tab1_column_8)]] + my_hseparator_2 + tab_group_output
+    #my_hseparator_1 + 
+    tab1_scrollable_column = [[sg.Column(tab1_column_1), sg.Column(tab1_column_5), sg.VSeperator(), sg.Column(tab1_column_2), sg.Column(tab1_column_6), sg.VSeperator(), sg.Column(tab1_column_8)]] + my_hseparator_2 + tab_group_output
 
     return [[my_yseparator_col, sg.Column(tab1_scrollable_column, scrollable = True, expand_x = True, expand_y = True)]]
 
@@ -1684,7 +1684,7 @@ def _create_main_layout(simplified, input_view):
         tab2_layout = _tab2_layout()
         tab3_layout = _tab3_layout()
         tab4_layout = _tab4_layout()
-        tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Найти минимальный флот против цели', tab2_layout), sg.Tab('Найти макс бонус преимущества', tab3_layout), sg.Tab('Планетарная бомбардировка', tab4_layout)]], size = (1200, 760))]]
+        tab_group = [[sg.TabGroup([[sg.Tab('Флот 1 против Флота 2', tab1_layout), sg.Tab('Найти минимальный флот против цели', tab2_layout), sg.Tab('Найти макс бонус преимущества', tab3_layout), sg.Tab('Планетарная бомбардировка', tab4_layout)]], size = (1210, 760))]]
 
     layout = menu + tab_group
     return layout
@@ -2400,6 +2400,9 @@ def _main():
                 # [[0, all_rockets[0]], [1, 0], [2, all_rockets[2]], [3, 0]]
                 antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, all_rockets[0][1]], [1, 0], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
                 print(antirocket_ships_list_raw)
+                #loki bug was fixed in the game
+                #disabling them here with a clumsy way
+                antirocket_ships_list_raw[5] = antirocket_ships_list_raw[5] ** 2
                 antiblockade_ships_list = []
                 for rrr in antirocket_ships_list_raw:
                     antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
@@ -2429,6 +2432,9 @@ def _main():
                 
                 antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, 0], [1, all_rockets[1][1]], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
                 print(antirocket_ships_list_raw)
+                #loki bug was fixed in the game
+                #disabling them here with a clumsy way
+                antirocket_ships_list_raw[5] = antirocket_ships_list_raw[5] ** 2
                 for i in range(len(antirocket_ships_list_raw)):
                     antirocket_ships_list_raw[i] += int(_my_round_threshhold_up(turret_sum_damage / (listofships[i][14] * module1[1] * defense_type_mod_1[4]), 0, threshhold))
                 antiblockade_ships_list = []
@@ -2823,6 +2829,9 @@ def _main():
                 # [[0, all_rockets[0]], [1, 0], [2, all_rockets[2]], [3, 0]]
                 antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, all_rockets[0][1]], [1, 0], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
                 print(antirocket_ships_list_raw)
+                #loki bug was fixed in the game
+                #disabling them here with a clumsy way
+                antirocket_ships_list_raw[5] = antirocket_ships_list_raw[5] ** 2
                 antiblockade_ships_list = []
                 for rrr in antirocket_ships_list_raw:
                     antiblockade_ships_list.append(int(_my_round_threshhold_up(rrr, 0, threshhold)))
@@ -2852,6 +2861,9 @@ def _main():
                 
                 antirocket_ships_list_raw = _simulate_damage_with_rockets_universal([0, 1, 2, 3, 4, 5, 6], [[0, 0], [1, all_rockets[1][1]], [2, all_rockets[2][1]], [3, 0]], 0, module1, defense_type_mod_1, on_blockade_attack, on_blockade, do_theory, threshhold)
                 print(antirocket_ships_list_raw)
+                #loki bug was fixed in the game
+                #disabling them here with a clumsy way
+                antirocket_ships_list_raw[5] = antirocket_ships_list_raw[5] ** 2
                 for i in range(len(antirocket_ships_list_raw)):
                     antirocket_ships_list_raw[i] += int(_my_round_threshhold_up(turret_sum_damage / (listofships[i][14] * module1[1] * defense_type_mod_1[4]), 0, threshhold))
                 antiblockade_ships_list = []
@@ -2920,11 +2932,14 @@ def _my_round_up(number):
 
 def _my_round_up_(number):
     if number != 0:
-        num_mod = number % int(number)
-        if num_mod != 0:
-            return _my_truncate(number, 0) + 1
+        if int(number) != 0:
+            num_mod = number % int(number)
+            if num_mod != 0:
+                return _my_truncate(number, 0) + 1
+            else:
+                return number
         else:
-            return number
+            return _my_truncate(number, 0) + 1
     else:
         return number
 
