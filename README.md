@@ -1,4 +1,15 @@
 # Galaxy-Online-Battle-Calculator
+
+Для винды скачиваем exe файл из последнего релиза
+
+https://github.com/fadedness/Galaxy-Online-Battle-Calculator/releases/latest
+
+Запускаем. Для продвинутых расчётов делаем:
+
+В верхнем меню Программа -> Внешний вид -> Упрощённый вид -> убрать галочку -> сохранить
+
+---------------
+
 A calculator of battle outcomes for online browser game Galaxy Online.
 
 Uses PySimpleGUI. Requires python3-tk
