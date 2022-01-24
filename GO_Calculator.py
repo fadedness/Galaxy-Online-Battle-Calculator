@@ -3018,8 +3018,14 @@ def _calc_mods(att_defense, def_defense, att_module, def_module):
     def_mod = []
     att_mod.append(att_module[0] * 1)
     def_mod.append(def_module[0] * 1)
-    t1_def_mod_div = att_module[1] % 1
-    t2_def_mod_div = def_module[1] % 1
+    if att_module[1] < 1:
+        t1_def_mod_div = att_module[1] % 1
+    elif att_module[1] >= 1:
+        t1_def_mod_div = att_module[1] - 1
+    if def_module[1] < 1:
+        t2_def_mod_div = def_module[1] % 1
+    elif def_module[1] >= 1:
+        t2_def_mod_div = def_module[1] - 1
     overbonus1 = 1
     overbonus2 = 1
     if att_defense > def_defense:
